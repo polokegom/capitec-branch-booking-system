@@ -56,13 +56,14 @@ The application itself is split between 3 different roles (Product-Owner, Bank-M
    - FusionAuth (local auth): http://localhost:9011
    - MailHog (email testing): http://localhost:8025
 
-   ### Product Owner Login Details (manages branches, assigns admin users)
+4. **Using the application:**
+   ### Logging in as a Customer:
+   - All you need to do register a user and validate the emails legitimacy using MailHog which will be running locally as part of the cluster (http://localhost:8025)
+   ### Logging in as Product Owner (manages branches, assigns admin users):
    - email: owner.lerato@gmail.co.za
    - password: password123
-   ### Customer Login Details
-   - All you need to do register a user and validate the emails legitimacy using MailHog which will be running locally as part of the cluster (http://localhost:8025)
 
-4. **Stopping the Application**
+5. **Stopping the Application**
 To stop all running services on the Capitec Appointment Booking System use the below scripts:
 
     ### On Windows (PowerShell):
