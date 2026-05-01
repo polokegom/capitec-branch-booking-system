@@ -66,14 +66,14 @@ The application itself is split between 3 different roles (Product-Owner, Bank-M
 5. **Stopping the Application**
 To stop all running services on the Capitec Appointment Booking System use the below scripts:
 
-    ### On Windows (PowerShell):
+    ### Stop application on Windows (Please use PowerShell on Admin mode):
     ```powershell
      # Allows you to execute the below windows scripts to build the image (Please run Powershell in admin mode when running this command)
     Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
     ./scripts/windows/stop-local-stack.ps1
     ```
 
-    ### On Linux/macOS (bash):
+    ### Stop application on Linux/macOS (bash - please run on admin mode):
     ```bash
     ./scripts/linux/stop-local-stack.sh
     ```
