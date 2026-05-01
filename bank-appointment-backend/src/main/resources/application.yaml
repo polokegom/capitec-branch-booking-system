@@ -1,0 +1,179 @@
+quarkus:
+  http:
+    port: "${HTTP_PORT:8080}"
+    cors:
+      ~: true
+      origins: "${CORS_ORIGINS:http://localhost:4200}"
+      methods: "GET,POST,PUT,PATCH,DELETE,OPTIONS"
+      headers: "Accept,Authorization,Content-Type,X-Idempotency-Key"
+      exposed-headers: "Location"
+      access-control-max-age: "24H"
+      access-control-allow-credentials: false
+    limits:
+      max-body-size: "64K"
+    auth:
+      permission:
+        public-auth:
+          paths: "/api/v1/auth/*"
+          policy: "permit"
+          methods: "GET,POST,OPTIONS"
+  oidc:
+    application-type: "service"
+    roles:
+      role-claim-path: "roles"
+  datasource:
+    db-kind: "postgresql"
+  hibernate-orm:
+    database:
+      default-schema: "booking"
+      generation: "validate"
+    log:
+      sql: false
+  flyway:
+    migrate-at-start: true
+    default-schema: "booking"
+    schemas: "booking"
+    create-schemas: true
+    baseline-on-migrate: true
+    baseline-version: "0"
+    locations: "classpath:db/migration"
+  jackson:
+    write-dates-as-timestamps: false
+  smallrye-openapi:
+    info-title: "Capitec Booking Backend API"
+    info-version: "1.0.0"
+    info-description: "Backend API for branch appointment search, slot availability and booking confirmation."
+  micrometer:
+    export:
+      prometheus:
+        enabled: true
+  mailer:
+    mock: false
+  rest-client:
+    fusionauth:
+      url: "${app.fusionauth.base-url}"
+      connect-timeout: 10000
+      read-timeout: 15000
+
+app:
+  booking:
+    lookahead-days: 45
+  countries-with-bank-branches:
+    markets:
+      Botswana:
+        timezone: Africa/Gaborone
+        provinces:
+          - Central
+          - Chobe
+          - Ghanzi
+          - Kgalagadi
+          - Kgatleng
+          - Kweneng
+          - North-East
+          - North-West
+          - South-East
+          - Southern
+      Eswatini:
+        timezone: Africa/Mbabane
+        provinces:
+          - Hhohho
+          - Lubombo
+          - Manzini
+          - Shiselweni
+      Lesotho:
+        timezone: Africa/Maseru
+        provinces:
+          - Berea
+          - Butha-Buthe
+          - Leribe
+          - Mafeteng
+          - Maseru
+          - "Mohale's Hoek"
+          - Mokhotlong
+          - "Qacha's Nek"
+          - Quthing
+          - Thaba-Tseka
+      Mauritius:
+        timezone: Indian/Mauritius
+        provinces:
+          - Black River
+          - Flacq
+          - Grand Port
+          - Moka
+          - Pamplemousses
+          - Plaines Wilhems
+          - Port Louis
+          - Rivière du Rempart
+          - Savanne
+          - Rodrigues
+      Mozambique:
+        timezone: Africa/Maputo
+        provinces:
+          - Cabo Delgado
+          - Gaza
+          - Inhambane
+          - Manica
+          - Maputo City
+          - Maputo Province
+          - Nampula
+          - Niassa
+          - Sofala
+          - Tete
+          - Zambezia
+      Namibia:
+        timezone: Africa/Windhoek
+        provinces:
+          - Erongo
+          - Hardap
+          - ǁKaras
+          - Kavango East
+          - Kavango West
+          - Khomas
+          - Kunene
+          - Ohangwena
+          - Omaheke
+          - Omusati
+          - Oshana
+          - Oshikoto
+          - Otjozondjupa
+          - Zambezi
+      South Africa:
+        timezone: Africa/Johannesburg
+        provinces:
+          - Eastern Cape
+          - Free State
+          - Gauteng
+          - KwaZulu-Natal
+          - Limpopo
+          - Mpumalanga
+          - Northern Cape
+          - North West
+          - Western Cape
+      Zambia:
+        timezone: Africa/Lusaka
+        provinces:
+          - Central
+          - Copperbelt
+          - Eastern
+          - Luapula
+          - Lusaka
+          - Muchinga
+          - Northern
+          - North-Western
+          - Southern
+          - Western
+      Zimbabwe:
+        timezone: Africa/Harare
+        provinces:
+          - Bulawayo
+          - Harare
+          - Manicaland
+          - Mashonaland Central
+          - Mashonaland East
+          - Mashonaland West
+          - Masvingo
+          - Matabeleland North
+          - Matabeleland South
+          - Midlands
+  email-assets:
+    base-url: "${EMAIL_ASSETS_BASE_URL:https://capitec-booking-prod-597088041287-email-assets.s3.af-south-1.amazonaws.com}"

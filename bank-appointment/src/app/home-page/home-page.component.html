@@ -1,0 +1,23 @@
+<section class="home-shell">
+  <section class="panel-surface" aria-labelledby="home-title">
+    <div>
+      <h1 id="home-title">{{ 'home.title' | transloco }}</h1>
+      <div class="home-actions">
+        <button mat-flat-button color="primary" type="button" (click)="login()">
+          {{ 'navbar.login' | transloco }}
+        </button>
+        <button mat-stroked-button type="button" (click)="register()">
+          {{ 'navbar.register' | transloco }}
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-features">
+    <img
+      class="home-feature-image"
+      src="../../assets/images/background_image.png"
+      [alt]="'home.imageAlt' | transloco"
+    />
+  </section>
+</section>

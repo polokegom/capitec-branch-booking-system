@@ -1,0 +1,174 @@
+<section class="admin-page">
+  <header class="admin-page-header">
+    <div>
+      <h1 class="admin-page-title">{{ 'customer.bookings.title' | transloco }}</h1>
+    </div>
+    <div class="admin-page-actions">
+      <button type="button" class="admin-page-navigation-button" (click)="goToBook()">
+        {{ 'customer.bookings.createBooking' | transloco }}
+      </button>
+      <button type="button" class="admin-page-sign-out" (click)="signOut()">
+        {{ 'admin.signOut' | transloco }}
+      </button>
+    </div>
+  </header>
+
+  @if (errorMessage(); as errorText) {
+    <div class="admin-page-alert admin-page-alert-error" role="alert">
+      {{ errorText.startsWith('customer.') || errorText.startsWith('admin.') ? (errorText | transloco) : errorText }}
+    </div>
+  }
+
+  <article class="admin-card">
+    <h2 class="admin-card-title">{{ 'customer.bookings.filters' | transloco }}</h2>
+    <form class="bookings-filters" (ngSubmit)="search()">
+      <label class="bookings-filters-field">
+        <span>{{ 'customer.bookings.searchBranch' | transloco }}</span>
+        <input
+          type="search"
+          [ngModel]="branchSearch()"
+          (ngModelChange)="branchSearch.set($event)"
+          name="branchSearch"
+          [placeholder]="'customer.bookings.searchPlaceholder' | transloco"
+        />
+      </label>
+      <label class="bookings-filters-field">
+        <span>{{ 'customer.bookings.dateFrom' | transloco }}</span>
+        <input
+          type="date"
+          [ngModel]="startDate()"
+          (ngModelChange)="startDate.set($event)"
+          name="startDate"
+        />
+      </label>
+      <label class="bookings-filters-field">
+        <span>{{ 'customer.bookings.dateTo' | transloco }}</span>
+        <input
+          type="date"
+          [ngModel]="endDate()"
+          (ngModelChange)="endDate.set($event)"
+          [min]="startDate()"
+          name="endDate"
+        />
+      </label>
+      <label class="bookings-filters-field">
+        <span>{{ 'customer.bookings.status' | transloco }}</span>
+        <select
+          [ngModel]="statusFilter()"
+          (ngModelChange)="statusFilter.set($event)"
+          name="statusFilter"
+          class="admin-form-select"
+        >
+          <option value="all">{{ 'customer.bookings.statusAll' | transloco }}</option>
+          <option value="active">{{ 'customer.bookings.status_active' | transloco }}</option>
+          <option value="completed">{{ 'customer.bookings.status_completed' | transloco }}</option>
+          <option value="cancelled">{{ 'customer.bookings.status_cancelled' | transloco }}</option>
+        </select>
+      </label>
+      <div class="bookings-filters-actions">
+        <button type="submit" class="bookings-filters-submit-button" [disabled]="!canSearch()" [class.is-loading]="loading()">
+          {{ 'customer.bookings.apply' | transloco }}
+        </button>
+        <button type="button" class="bookings-filters-reset-button" (click)="resetFilters()" [disabled]="loading()">
+          {{ 'customer.bookings.reset' | transloco }}
+        </button>
+      </div>
+    </form>
+  </article>
+
+  <article class="admin-card">
+    <div class="admin-card-head">
+      <h2 class="admin-card-title">{{ 'customer.bookings.results' | transloco }}</h2>
+      <span class="admin-card-count" [attr.aria-label]="'admin.totalLabel' | transloco">
+        <span class="admin-card-count-label">{{ 'admin.totalLabel' | transloco }}</span>
+        <span class="admin-card-count-value">{{ total() }}</span>
+      </span>
+    </div>
+
+    @if (showInitialLoadingState()) {
+      <p class="admin-card-hint">{{ 'admin.loading' | transloco }}</p>
+    } @else if (showEmptyState()) {
+      <p class="admin-card-hint">{{ 'customer.bookings.empty' | transloco }}</p>
+    } @else {
+      @if (backgroundRefreshing()) {
+        <p class="admin-card-hint">{{ 'admin.loading' | transloco }}</p>
+      }
+      @for (group of statusGroups(); track group.key) {
+        <section class="bookings-group">
+          <h3 class="bookings-group-title">
+            <span class="status-tag" [class.status-tag-active]="group.key === 'active'" [class.status-tag-completed]="group.key === 'completed'" [class.status-tag-cancelled]="group.key === 'cancelled'">
+              {{ group.labelKey | transloco }}
+            </span>
+            <span class="bookings-group-count">{{ group.items.length }}</span>
+          </h3>
+          <div class="admin-table-wrapper">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>{{ 'customer.bookings.date' | transloco }}</th>
+                  <th>{{ 'customer.bookings.time' | transloco }}</th>
+                  <th>{{ 'customer.bookings.branch' | transloco }}</th>
+                  <th>{{ 'customer.bookings.reference' | transloco }}</th>
+                  <th class="admin-table-actions-col">{{ 'customer.bookings.actions' | transloco }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (booking of group.items; track booking.id) {
+                  <tr>
+                    <td>{{ formatDate(booking.startDateTime) }}</td>
+                    <td>{{ formatTime(booking.startDateTime) }} to {{ formatTime(booking.endDateTime) }}</td>
+                    <td>
+                      <span class="admin-table-name">{{ booking.branchName ?? '-' }}</span>
+                      @if (booking.branchCity) {
+                        <span class="admin-table-secondary-text">{{ booking.branchCity }}</span>
+                      }
+                    </td>
+                    <td><span class="admin-table-name">{{ booking.bookingReference }}</span></td>
+                    <td>
+                      @if (isCancellable(booking)) {
+                        <button
+                          type="button"
+                          class="cancel-button"
+                          (click)="cancel(booking)"
+                          [disabled]="cancellingReference() === booking.bookingReference"
+                        >
+                          {{ cancellingReference() === booking.bookingReference ? ('customer.bookings.cancelling' | transloco) : ('customer.bookings.cancel' | transloco) }}
+                        </button>
+                      } @else {
+                        <span class="admin-table-secondary-text">-</span>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      }
+    }
+
+    @if (total() > 0) {
+      <div class="admin-pagination">
+        <button
+          type="button"
+          class="admin-pagination-button"
+          (click)="previousPage()"
+          [disabled]="startIndex() === 0 || loading()"
+        >
+          {{ 'admin.prev' | transloco }}
+        </button>
+        <span class="admin-pagination-status">
+          {{ 'admin.pageStatus' | transloco: { page: currentPage(), total: totalPages() } }}
+        </span>
+        <button
+          type="button"
+          class="admin-pagination-button"
+          (click)="nextPage()"
+          [disabled]="!hasMore() || loading()"
+        >
+          {{ 'admin.next' | transloco }}
+        </button>
+      </div>
+    }
+  </article>
+</section>

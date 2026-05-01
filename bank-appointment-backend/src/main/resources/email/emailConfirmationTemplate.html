@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Your appointment is confirmed</title>
+</head>
+<body style="margin:0;padding:0;background:#eef1f5;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:#1a1a1a;-webkit-font-smoothing:antialiased;">
+  <div style="display:none;max-height:0;overflow:hidden;color:#eef1f5;font-size:1px;line-height:1px;">
+    Your Capitec branch appointment is confirmed. Reference {{bookingReference}}.
+  </div>
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#eef1f5;padding:32px 12px;">
+    <tr><td align="center">
+      <table role="presentation" width="640" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:860px;background:#ffffff;border-radius:4px;overflow:hidden;box-shadow:0 2px 6px rgba(0,30,90,0.06);">
+
+        <tr><td style="background-color:#3a5e91;">
+          <img src="{{emailAssetsBaseUrl}}/capitec_email_confirmation.png" alt="Welcome to Capitec" width="860" style="display:block;width:100%;height:auto;border:0;outline:none;text-decoration:none;"/>
+        </td></tr>
+
+        <tr><td style="background:#26599c;padding:28px 40px 32px 40px;">
+          <div style="font-family:Oswald,'Helvetica Neue',Arial,sans-serif;font-size:34px;text-transform:uppercase;line-height:1.15;font-weight:600;color:#ffffff;letter-spacing:0.5px;">Booking Confirmed</div>
+        </td></tr>
+
+        <tr><td style="padding:36px 40px 8px 40px;font-family:'Helvetica Neue',Arial,sans-serif;font-size:18px;line-height:1.5;color:#000c20;font-weight:400;">Hi {{customerName}},</td></tr>
+        <tr><td style="padding:0 40px 28px 40px;font-family:'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.65;color:#000c20;">
+          Thank you for booking your branch appointment with Capitec. Your slot is reserved and the team is looking forward to meeting you.
+        </td></tr>
+
+        <tr><td style="padding:0 40px;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f6f8fb;border:1px solid #e2e8f1;border-left:4px solid #0066b2;">
+            <tr><td style="padding:20px 24px;">
+              <div style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:10px;color:#475f86;letter-spacing:3px;text-transform:uppercase;">Booking reference</div>
+              <div style="font-family:Oswald,'Helvetica Neue',Arial,sans-serif;font-size:26px;font-weight:600;color:#000e20;letter-spacing:1px;margin-top:4px;">{{bookingReference}}</div>
+            </td></tr>
+          </table>
+        </td></tr>
+
+        <tr><td style="padding:24px 40px 8px 40px;">
+          <div style="font-family:Oswald,'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#000000;letter-spacing:3px;text-transform:uppercase;border-bottom:2px solid #001a3d;padding-bottom:8px;">Booking Details</div>
+        </td></tr>
+        <tr><td style="padding:0 40px 8px 40px;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="font-family:'Helvetica Neue',Arial,sans-serif;">
+            <tr><td style="padding:14px 0;border-bottom:1px solid #e6ebf2;width:38%;font-size:11px;color:#4d5c74;letter-spacing:2px;text-transform:uppercase;vertical-align:top;">Branch</td>
+                <td style="padding:14px 0;border-bottom:1px solid #e6ebf2;font-size:15px;color:#000c20;font-weight:500;">{{branchLabel}}</td></tr>
+            <tr><td style="padding:14px 0;border-bottom:1px solid #e6ebf2;font-size:11px;color:#4d5c74;letter-spacing:2px;text-transform:uppercase;vertical-align:top;">Date</td>
+                <td style="padding:14px 0;border-bottom:1px solid #e6ebf2;font-size:15px;color:#000c20;font-weight:500;">{{appointmentDate}}</td></tr>
+            <tr><td style="padding:14px 0;border-bottom:1px solid #e6ebf2;font-size:11px;color:#4d5c74;letter-spacing:2px;text-transform:uppercase;vertical-align:top;">Time</td>
+                <td style="padding:14px 0;border-bottom:1px solid #e6ebf2;font-size:15px;color:#000c20;font-weight:500;">{{appointmentTime}}</td></tr>
+            <tr><td style="padding:14px 0;font-size:11px;color:#6b7a92;letter-spacing:2px;text-transform:uppercase;vertical-align:top;">Booked&nbsp;for</td>
+                <td style="padding:14px 0;font-size:15px;color:#1a1a1a;font-weight:500;">{{customerName}}</td></tr>
+          </table>
+        </td></tr>
+
+      </table>
+      <div style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;color:#8a9bb3;padding:16px 8px 0 8px;max-width:640px;line-height:1.5;">
+        Capitec Bank is an authorised financial services provider (FSP 46669) and registered credit provider (NCRCP13). Capitec Bank Limited Reg. No: 1980/003695/06
+      </div>
+    </td></tr>
+  </table>
+</body>
+</html>

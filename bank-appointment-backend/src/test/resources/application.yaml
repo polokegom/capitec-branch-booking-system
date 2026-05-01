@@ -1,0 +1,39 @@
+quarkus:
+  oidc:
+    enabled: false
+  datasource:
+    db-kind: postgresql
+    devservices:
+      enabled: true
+      image-name: postgres:16
+      db-name: booking_test
+      username: booking_test
+      password: booking_test
+  hibernate-orm:
+    database:
+      default-schema: booking
+      generation: validate
+  flyway:
+    migrate-at-start: true
+    default-schema: booking
+    schemas: booking
+    create-schemas: true
+    locations: classpath:db/migration
+  mailer:
+    mock: true
+  rest-client:
+    fusionauth:
+      url: http://localhost:9011
+
+app:
+  fusionauth:
+    base-url: http://localhost:9011
+    api-key: test-api-key
+    application-id: 85a03867-dccf-4882-adde-1a79aeec50df
+    tenant-id: 30663132-6464-6665-3032-326466613934
+  public-base-url: http://localhost:4200
+  email-assets:
+    base-url: http://localhost:4200/assets/email
+  security:
+    owner-email: owner@example.co.za
+    bootstrap-owner: false

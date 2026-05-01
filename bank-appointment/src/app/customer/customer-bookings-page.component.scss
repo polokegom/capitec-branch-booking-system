@@ -1,0 +1,80 @@
+@use '../admin/admin-bookings-page/admin-bookings-page.component.scss';
+
+.status-tag {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 12px;
+  background: #f1f3f7;
+  color: #1a1f2c;
+}
+
+.status-tag-active {
+  background: #d8f3dc;
+  color: #1b4332;
+}
+
+.status-tag-completed {
+  background: #dde7ff;
+  color: #1d3a8a;
+}
+
+.status-tag-cancelled {
+  background: #ffe5e5;
+  color: #842029;
+}
+
+.admin-table-actions-col {
+  width: 130px;
+}
+
+.bookings-group-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bookings-group-count {
+  background: #f1f3f7;
+  color: #1a1f2c;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.cancel-button {
+  background: #fff;
+  color: #b3261e;
+  border: 1px solid #b3261e;
+  border-radius: 999px;
+  padding: 6px 16px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease, transform 80ms ease;
+}
+
+.cancel-button:hover:not(:disabled) {
+  background: #b3261e;
+  color: #fff;
+  border-color: #b3261e;
+}
+
+.cancel-button:active:not(:disabled) {
+  background: #8c1d18;
+  border-color: #8c1d18;
+  color: #fff;
+  transform: translateY(1px);
+}
+
+.cancel-button:focus-visible {
+  outline: 2px solid #b3261e;
+  outline-offset: 2px;
+}
+
+.cancel-button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}

@@ -1,0 +1,141 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: capitec-booking-postgres
+    environment:
+      POSTGRES_DB: booking_service
+      POSTGRES_USER: booking_user
+      POSTGRES_PASSWORD: booking_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - booking-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U booking_user -d booking_service"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  fusionauth-db:
+    image: postgres:16
+    container_name: capitec-booking-fusionauth-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - fusionauth-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  fusionauth:
+    build:
+      context: .
+      dockerfile: fusionauth/Dockerfile
+    image: capitec-booking-fusionauth:local
+    container_name: capitec-booking-fusionauth
+    depends_on:
+      fusionauth-db:
+        condition: service_healthy
+      mailhog:
+        condition: service_started
+    environment:
+      DATABASE_URL: jdbc:postgresql://fusionauth-db:5432/fusionauth
+      DATABASE_ROOT_USERNAME: postgres
+      DATABASE_ROOT_PASSWORD: postgres
+      DATABASE_USERNAME: fusionauth
+      DATABASE_PASSWORD: fusionauth
+      FUSIONAUTH_APP_MEMORY: 512M
+      FUSIONAUTH_APP_RUNTIME_MODE: development
+      FUSIONAUTH_APP_DEFAULT_ADMIN_USERNAME: admin@capitec-booking.co.za
+      FUSIONAUTH_APP_DEFAULT_ADMIN_PASSWORD: password123
+      SEARCH_TYPE: database
+      FUSIONAUTH_APP_URL: http://fusionauth:9011
+      FUSIONAUTH_APP_KICKSTART_FILE: /usr/local/fusionauth/kickstart/kickstart.json
+      FUSIONAUTH_ALLOWED_ORIGIN: http://localhost:4200
+      FUSIONAUTH_PUBLIC_BASE_URL: http://localhost:8080
+      FUSIONAUTH_ISSUER: http://localhost:9011
+      FUSIONAUTH_REDIRECT_URL: http://localhost:4200/auth/callback
+      FUSIONAUTH_LOGOUT_URL: http://localhost:4200/
+      FUSIONAUTH_EMAIL_HEADER_IMAGE_URL: ${EMAIL_ASSETS_BASE_URL:-https://capitec-booking-prod-597088041287-email-assets.s3.af-south-1.amazonaws.com}/capitec_background_img_email.jpeg
+      FUSIONAUTH_SMTP_HOST: mailhog
+      FUSIONAUTH_SMTP_PORT: "1025"
+      FUSIONAUTH_SMTP_SECURITY: NONE
+      FUSIONAUTH_MAIL_FROM: no-reply@capitec-booking.co.za
+    ports:
+      - "9011:9011"
+    volumes:
+      - fusionauth-config:/usr/local/fusionauth/config
+    restart: unless-stopped
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: capitec-booking-mailhog
+    ports:
+      - "1026:1025"
+      - "8025:8025"
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        QUARKUS_BUILD_PROFILE: dev
+    image: capitec-booking-backend:latest
+    container_name: capitec-booking-backend
+    environment:
+      QUARKUS_PROFILE: dev
+      QUARKUS_HTTP_PORT: 8080
+      QUARKUS_HTTP_HOST: 0.0.0.0
+      DB_JDBC_URL: jdbc:postgresql://postgres:5432/booking_service
+      DB_REACTIVE_URL: postgresql://postgres:5432/booking_service
+      DB_REACTIVE_SSL_MODE: disable
+      QUARKUS_DATASOURCE_REACTIVE_POSTGRESQL_SSL_MODE: disable
+      QUARKUS_DATASOURCE_REACTIVE_TRUST_CERTIFICATE_PEM: "false"
+      DB_USERNAME: booking_user
+      DB_PASSWORD: booking_pass
+      FUSIONAUTH_BASE_URL: http://fusionauth:9011
+      OIDC_AUTH_SERVER_URL: http://fusionauth:9011
+      CORS_ORIGINS: http://localhost:4200
+      PUBLIC_BASE_URL: http://localhost:4200
+      EMAIL_ASSETS_BASE_URL: ${EMAIL_ASSETS_BASE_URL:-https://capitec-booking-prod-597088041287-email-assets.s3.af-south-1.amazonaws.com}
+      MAIL_HOST: mailhog
+      MAIL_PORT: "1025"
+      OWNER_EMAIL: admin@capitec-booking.co.za
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      fusionauth:
+        condition: service_started
+      mailhog:
+        condition: service_started
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ../bank-appointment
+      dockerfile: Dockerfile
+    image: capitec-booking-frontend:latest
+    container_name: capitec-booking-frontend
+    environment:
+      NGINX_PORT: 8080
+      NGINX_RESOLVER: 127.0.0.11
+      BACKEND_UPSTREAM: http://backend:8080
+      FUSIONAUTH_UPSTREAM: http://fusionauth:9011
+    ports:
+      - "4200:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+      fusionauth:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  booking-postgres-data:
+  fusionauth-db-data:
+  fusionauth-config:

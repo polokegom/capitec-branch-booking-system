@@ -1,0 +1,60 @@
+[#setting url_escaping_charset="UTF-8"]
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Verify your email address</title>
+</head>
+<body style="margin:0;padding:0;background:#eef1f5;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:#1a1a1a;-webkit-font-smoothing:antialiased;">
+  <div style="display:none;max-height:0;overflow:hidden;color:#eef1f5;font-size:1px;line-height:1px;">
+    Please verify your Capitec branch booking email address.
+  </div>
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#eef1f5;padding:32px 12px;">
+    <tr><td align="center">
+      <table role="presentation" width="640" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:860px;background:#ffffff;border-radius:4px;overflow:hidden;box-shadow:0 2px 6px rgba(0,30,90,0.06);">
+
+        <tr><td style="background-color:#3a5e91;">
+          <img src="{{emailAssetsBaseUrl}}/capitec_background_img_email.jpeg" alt="Capitec Email" width="860" style="display:block;width:100%;height:auto;border:0;outline:none;text-decoration:none;"/>
+        </td></tr>
+
+        <tr><td style="background:#26599c;padding:28px 40px 32px 40px;">
+          <div style="font-family:Oswald,'Helvetica Neue',Arial,sans-serif;font-size:34px;text-transform:uppercase;line-height:1.15;font-weight:600;color:#ffffff;letter-spacing:0.5px;">Verify Your Email</div>
+        </td></tr>
+
+        <tr><td style="padding:36px 40px 8px 40px;font-family:'Helvetica Neue',Arial,sans-serif;font-size:18px;line-height:1.5;color:#000c20;font-weight:400;">Hi ${user.firstName!'there'},</td></tr>
+        <tr><td style="padding:0 40px 28px 40px;font-family:'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.65;color:#000c20;">
+          Welcome to the Capitec Booking System! Before we get started, please verify your email address by clicking the button below.
+        </td></tr>
+
+        <tr><td style="padding:0 40px 32px 40px;">
+          <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 auto;">
+            <tr>
+              <td style="border-radius:999px; background:#0066b2;">
+                <a href="__EMAIL_VERIFY_BASE_URL__/${verificationId}?tenantId=${tenant.id}"
+                   style="display:inline-block; padding:16px 36px; color:#ffffff; text-decoration:none; font-size:17px; font-weight:700; border-radius:999px; letter-spacing:1px;">
+                  Verify Email Address
+                </a>
+              </td>
+            </tr>
+          </table>
+        </td></tr>
+
+        <tr><td style="padding:0 40px 18px 40px;color:#6b7280;font-size:13px;line-height:1.6;">
+          If the button does not work, please copy and paste this link into your browser for verification:<br>
+          <a href="__EMAIL_VERIFY_BASE_URL__/${verificationId}?tenantId=${tenant.id}" style="color:#0066b2; word-break:break-all;">
+            __EMAIL_VERIFY_BASE_URL__/${verificationId}?tenantId=${tenant.id}
+          </a>
+        </td></tr>
+
+        <tr><td style="border-top:1px solid #edeff3; padding:18px 28px; background:#fafbfd;">
+          <p style="margin:0; color:#888f9d; font-size:11px; line-height:1.5;">
+            Capitec Bank is an authorised financial services provider (FSP 46669) and registered credit provider (NCRCP13). Capitec Bank Limited Reg. No: 1980/003695/06
+          </p>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>

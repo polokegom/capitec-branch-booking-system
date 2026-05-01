@@ -1,0 +1,251 @@
+{
+  "variables": {
+    "defaultTenantId": "30663132-6464-6665-3032-326466613934",
+    "applicationId": "85a03867-dccf-4882-adde-1a79aeec50df",
+    "verificationEmailTemplateId": "93c3af6f-6400-4d2f-bf2c-b26e4c3c2465",
+    "lambdaId": "5641b8a2-d567-4ec9-aa54-1e0d83eea33f",
+    "themeId": "ca91dec0-7777-4f0f-9e30-a14db66614c1",
+    "asymmetricKeyId": "#{UUID()}",
+    "adminEmail": "admin@capitec-booking.co.za",
+    "adminPassword": "password123"
+  },
+  "apiKeys": [
+    {
+      "key": "bf69486b-4733-4470-a592-f1bfce7af580",
+      "description": "Bootstrap API key (dev only)"
+    }
+  ],
+  "requests": [
+    {
+      "method": "PATCH",
+      "url": "/api/system-configuration",
+      "body": {
+        "systemConfiguration": {
+          "corsConfiguration": {
+            "enabled": true,
+            "allowCredentials": true,
+            "allowedHeaders": [
+              "Accept",
+              "Access-Control-Request-Headers",
+              "Access-Control-Request-Method",
+              "Authorization",
+              "Content-Type",
+              "Last-Modified",
+              "Origin",
+              "X-FusionAuth-TenantId",
+              "X-Requested-With"
+            ],
+            "allowedMethods": ["GET", "OPTIONS", "POST"],
+            "allowedOrigins": ["http://localhost:4200"],
+            "exposedHeaders": [
+              "Access-Control-Allow-Origin",
+              "Access-Control-Allow-Credentials"
+            ],
+            "preflightMaxAgeInSeconds": 1800
+          }
+        }
+      }
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/tenant/#{defaultTenantId}",
+      "body": {
+        "tenant": {
+          "issuer": "http://localhost:9011"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/email/template/#{verificationEmailTemplateId}",
+      "body": {
+        "emailTemplate": {
+          "name": "Capitec Booking Email Verification",
+          "fromEmail": "no-reply@capitec-booking.co.za",
+          "defaultFromName": "Capitec Booking",
+          "defaultSubject": "Verify your Capitec booking email",
+          "defaultHtmlTemplate": "__VERIFICATION_HTML_TEMPLATE__",
+          "defaultTextTemplate": "[#setting url_escaping_charset=\"UTF-8\"]Hello ${user.firstName!'there'},\n\nPlease verify your email address before signing in to Capitec Branch Booking.\n\n__EMAIL_VERIFY_BASE_URL__/${verificationId}?tenantId=${tenant.id}\n\nIf you did not create this account, you can ignore this email."
+        }
+      }
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/tenant/#{defaultTenantId}",
+      "body": {
+        "tenant": {
+          "emailConfiguration": {
+            "defaultFromEmail": "no-reply@capitec-booking.co.za",
+            "defaultFromName": "Capitec Booking",
+            "host": "mailhog",
+            "port": 1025,
+            "security": "NONE",
+            "username": "__SMTP_USERNAME__",
+            "password": "__SMTP_PASSWORD__",
+            "verificationEmailTemplateId": "#{verificationEmailTemplateId}",
+            "verificationStrategy": "ClickableLink",
+            "verifyEmail": true,
+            "verifyEmailWhenChanged": true,
+            "unverified": {
+              "allowEmailChangeWhenGated": false,
+              "behavior": "Allow"
+            }
+          }
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/key/generate/#{asymmetricKeyId}",
+      "body": {
+        "key": {
+          "algorithm": "RS256",
+          "name": "For Capitec Booking",
+          "length": 2048
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/lambda/#{lambdaId}",
+      "body": {
+        "lambda": {
+          "name": "Add profile claims to access token",
+          "type": "JWTPopulate",
+          "engineType": "GraalJS",
+          "enabled": true,
+          "body": "function populate(jwt, user, registration) { if (user.email) { jwt.email = user.email; } if (user.firstName || user.lastName) { jwt.name = ((user.firstName || '') + ' ' + (user.lastName || '')).trim(); } if (registration && registration.roles) { jwt.roles = registration.roles; jwt.groups = registration.roles; } }"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/theme/#{themeId}",
+      "body": {
+        "sourceThemeId": "75a068fd-e94b-451a-9aeb-3ddb9a3b5987",
+        "theme": {
+          "name": "Capitec Booking",
+          "stylesheet": ":root{--capitec-primary:#0066B3;--capitec-primary-dark:#004F8C;--capitec-accent:#00A3E0;--capitec-ink:#071D38;--capitec-ink-soft:#41516A;--capitec-bg:#F3F6FA;--capitec-card:#FFFFFF;--capitec-border:#DDE5EF;--capitec-success:#1B6E3E;--capitec-radius:12px;}html,body{background:var(--capitec-bg) !important;font-family:'Inter','Segoe UI',system-ui,-apple-system,sans-serif !important;color:var(--capitec-ink) !important;}body{min-height:100vh;}main,.container,.page,.background,.wrapper{background:transparent !important;}.panel,.card,.box,.login-form,form{background:var(--capitec-card) !important;border:1px solid var(--capitec-border) !important;border-radius:var(--capitec-radius) !important;box-shadow:0 16px 40px rgba(7,29,56,.10) !important;padding:2rem !important;}h1,h2,h3,.title,.heading,legend{color:var(--capitec-ink) !important;font-weight:700 !important;letter-spacing:0 !important;}h1,.title{font-size:1.55rem !important;line-height:1.2 !important;}p,.muted,.help{color:var(--capitec-ink-soft) !important;line-height:1.6 !important;}label{color:var(--capitec-ink-soft) !important;font-weight:600 !important;font-size:.9rem !important;}input[type='text'],input[type='email'],input[type='password'],input[type='number'],select,textarea{background:#FFFFFF !important;border:1px solid var(--capitec-border) !important;border-radius:10px !important;padding:.75rem .9rem !important;color:var(--capitec-ink) !important;transition:border-color .15s ease,box-shadow .15s ease;}input:focus,select:focus,textarea:focus{border-color:var(--capitec-primary) !important;box-shadow:0 0 0 3px rgba(0,102,179,.14) !important;outline:none !important;}.button,button,input[type='submit'],.btn,.btn-primary,a.button{background:var(--capitec-primary) !important;border:none !important;color:#FFFFFF !important;border-radius:999px !important;padding:.8rem 1.5rem !important;font-weight:700 !important;letter-spacing:0 !important;text-transform:none !important;box-shadow:0 8px 18px rgba(0,102,179,.22) !important;transition:background .15s ease,transform .05s ease;}.button:hover,button:hover,input[type='submit']:hover,.btn:hover{background:var(--capitec-primary-dark) !important;}.button:active,button:active{transform:translateY(1px);}a,.link{color:var(--capitec-primary) !important;font-weight:600;text-decoration:none;}a:hover{color:var(--capitec-primary-dark) !important;text-decoration:underline;}.alert,.error,.help-block{border-radius:10px !important;}.alert-error,.error{background:#FFF5F5 !important;color:#A12828 !important;border:1px solid #F2C9C9 !important;}.alert-success,.success{background:#EFFAF4 !important;color:var(--capitec-success) !important;border:1px solid #CDEBD8 !important;}.brand,.logo{color:var(--capitec-primary) !important;}hr{border-color:var(--capitec-border) !important;}"
+        }
+      }
+    },
+    {
+      "method": "PATCH",
+      "url": "/api/tenant/#{defaultTenantId}",
+      "body": {
+        "tenant": {
+          "themeId": "#{themeId}"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/application/#{applicationId}",
+      "body": {
+        "application": {
+          "name": "Capitec Booking Web",
+          "tenantId": "#{defaultTenantId}",
+          "oauthConfiguration": {
+            "authorizedRedirectURLs": [
+              "http://localhost:4200/auth/callback"
+            ],
+            "logoutURL": "http://localhost:4200/",
+            "enabledGrants": [
+              "authorization_code",
+              "password",
+              "refresh_token"
+            ],
+            "generateRefreshTokens": true,
+            "requireClientAuthentication": false,
+            "proofKeyForCodeExchangeRequired": true
+          },
+          "jwtConfiguration": {
+            "enabled": true,
+            "accessTokenKeyId": "#{asymmetricKeyId}",
+            "idTokenKeyId": "#{asymmetricKeyId}",
+            "timeToLiveInSeconds": 3600,
+            "refreshTokenTimeToLiveInMinutes": 60,
+            "refreshTokenExpirationPolicy": "Fixed"
+          },
+          "lambdaConfiguration": {
+            "accessTokenPopulateId": "#{lambdaId}",
+            "idTokenPopulateId": "#{lambdaId}"
+          },
+          "registrationConfiguration": {
+            "enabled": true,
+            "type": "basic",
+            "firstName": { "enabled": true, "required": true },
+            "lastName": { "enabled": true, "required": true },
+            "confirmPassword": true,
+            "loginIdType": "email"
+          },
+          "roles": [
+            { "name": "customer", "description": "Capitec booking customer", "isDefault": true },
+            { "name": "admin", "description": "Branch admin: views bookings for assigned branches" },
+            { "name": "owner", "description": "Product owner: manages branches and admin assignments" }
+          ]
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/user/registration",
+      "body": {
+        "skipVerification": true,
+        "skipRegistrationVerification": true,
+        "user": {
+          "email": "#{adminEmail}",
+          "firstName": "Admin",
+          "lastName": "User",
+          "password": "#{adminPassword}",
+          "verified": true
+        },
+        "registration": {
+          "applicationId": "#{applicationId}",
+          "roles": ["owner", "customer"],
+          "verified": true
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/user/registration",
+      "body": {
+        "skipVerification": true,
+        "skipRegistrationVerification": true,
+        "user": {
+          "email": "demo.customer@capitec.co.za",
+          "firstName": "Demo",
+          "lastName": "Customer",
+          "password": "password123",
+          "verified": true
+        },
+        "registration": {
+          "applicationId": "#{applicationId}",
+          "roles": ["customer"],
+          "verified": true
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/user/registration",
+      "body": {
+        "skipVerification": true,
+        "skipRegistrationVerification": true,
+        "user": {
+          "email": "penelope@capitec.co.za",
+          "firstName": "Penelope",
+          "lastName": "Mokoena",
+          "password": "password123",
+          "verified": true
+        },
+        "registration": {
+          "applicationId": "#{applicationId}",
+          "roles": ["customer"],
+          "verified": true
+        }
+      }
+    }
+  ]
+}

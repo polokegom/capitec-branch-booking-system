@@ -1,0 +1,65 @@
+<section class="auth-page">
+  <div class="auth-card">
+    <header class="auth-card-header">
+      <h1 class="auth-card-title">{{ 'login.title' | transloco }}</h1>
+    </header>
+
+    <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="auth-form-field">
+        <label for="login-email">{{ 'login.email' | transloco }}</label>
+        <input
+          id="login-email"
+          type="email"
+          autocomplete="email"
+          formControlName="email"
+          [attr.aria-invalid]="form.controls.email.touched && form.controls.email.invalid ? 'true' : null"
+        />
+        @if (form.controls.email.touched && form.controls.email.invalid) {
+          <p class="auth-form-error">{{ 'login.emailInvalid' | transloco }}</p>
+        }
+      </div>
+
+      <div class="auth-form-field">
+        <label for="login-password">{{ 'login.password' | transloco }}</label>
+        <input
+          id="login-password"
+          type="password"
+          autocomplete="current-password"
+          formControlName="password"
+          [attr.aria-invalid]="form.controls.password.touched && form.controls.password.invalid ? 'true' : null"
+        />
+        @if (form.controls.password.touched && form.controls.password.invalid) {
+          <p class="auth-form-error">{{ 'login.passwordRequired' | transloco }}</p>
+        }
+      </div>
+
+      @if (errorMessage(); as msg) {
+        <div class="auth-form-alert" role="alert">{{ msg }}</div>
+      }
+
+      @if (noticeMessage(); as msg) {
+        <div class="auth-form-notice" role="status">{{ msg }}</div>
+      }
+
+      <button class="auth-form-submit-button" type="submit" [disabled]="submitting()">
+        {{ submitting() ? ('login.submitting' | transloco) : ('login.submit' | transloco) }}
+      </button>
+
+      @if (verificationIssue()) {
+        <button
+          class="auth-form-secondary-button"
+          type="button"
+          [disabled]="resendingVerification()"
+          (click)="resendVerificationEmail()"
+        >
+          {{ resendingVerification() ? ('login.resendingVerification' | transloco) : ('login.resendVerification' | transloco) }}
+        </button>
+      }
+    </form>
+
+    <p class="auth-card-footer">
+      {{ 'login.noAccount' | transloco }}
+      <a routerLink="/register">{{ 'login.registerLink' | transloco }}</a>
+    </p>
+  </div>
+</section>

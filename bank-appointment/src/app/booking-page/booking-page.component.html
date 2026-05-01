@@ -1,0 +1,273 @@
+<div>
+  <section class="panel-surface" aria-labelledby="page-title">
+    <div>
+      <h1 id="page-title">{{ 'header.title' | transloco }}</h1>
+    </div>
+  </section>
+
+  <section class="content-grid">
+    <mat-card class="booking-card panel-surface">
+      <mat-card-content>
+        <ol class="step-strip" [attr.aria-label]="'steps.aria' | transloco">
+          @for (step of steps; track step; let stepIndex = $index) {
+            <li
+              class="step-item"
+              [class.active]="currentStep() >= stepIndex + 1"
+              [class.current]="currentStep() === stepIndex + 1"
+              [class.clickable]="stepIndex + 1 < currentStep() && isStepAvailable(stepIndex + 1) && !confirmation()?.success"
+              [attr.aria-current]="currentStep() === stepIndex + 1 ? 'step' : null"
+              (click)="goToStep(stepIndex + 1)"
+              (keydown.enter)="goToStep(stepIndex + 1)"
+              (keydown.space)="goToStep(stepIndex + 1); $event.preventDefault()"
+              [attr.tabindex]="stepIndex + 1 < currentStep() && isStepAvailable(stepIndex + 1) && !confirmation()?.success ? 0 : null"
+              [attr.role]="stepIndex + 1 < currentStep() && isStepAvailable(stepIndex + 1) && !confirmation()?.success ? 'button' : null"
+            >
+              <span class="step-index">{{ stepIndex + 1 }}</span>
+              <span class="step-label">{{ step | transloco }}</span>
+            </li>
+          }
+        </ol>
+
+        <div class="section-divider" aria-hidden="true"></div>
+
+        @if (currentStep() === 1) {
+          <section class="panel" aria-labelledby="branch-heading" aria-describedby="branch-help">
+            <div class="panel-headline panel-headline-single">
+              <div style="margin-bottom:20px">
+                <h2 id="branch-heading">{{ 'branch.title' | transloco }}</h2>
+              </div>
+            </div>
+
+            <mat-form-field appearance="outline" class="full-width search-field">
+              <mat-label>{{ 'branch.title' | transloco }}</mat-label>
+              <mat-icon matPrefix aria-hidden="true">search</mat-icon>
+              <input
+                id="branch-search"
+                matInput
+                type="text"
+                [placeholder]="'branch.placeholder' | transloco"
+                [ngModel]="branchQuery()"
+                (ngModelChange)="onBranchQueryChange($event)"
+                aria-describedby="branch-help"
+              />
+            </mat-form-field>
+
+            @if (isLoadingBranches()) {
+              <p class="empty-state" role="status" aria-live="polite">{{ 'branch.loading' | transloco }}</p>
+            } @else if (branchErrorMessageKey()) {
+              <p class="empty-state" role="alert">{{ branchErrorMessageKey()! | transloco }}</p>
+            } @else {
+              <ul class="branch-list" role="list" [attr.aria-label]="'branch.title' | transloco">
+                @for (branch of filteredBranches(); track branch.id) {
+                  <li>
+                    <button
+                      type="button"
+                      class="branch-card"
+                      (click)="chooseBranch(branch)"
+                      [attr.aria-label]="branch.name + ', ' + branch.city"
+                    >
+                      <div class="branch-info">
+                        <span class="branch-name">{{ branch.name }}</span>
+                        <span class="branch-city">{{ branch.city }}</span>
+                      </div>
+                      <mat-icon aria-hidden="true">arrow_forward</mat-icon>
+                    </button>
+                  </li>
+                }
+                @if (filteredBranches().length === 0) {
+                  <li>
+                    <p class="empty-state" role="status" aria-live="polite">{{ 'branch.noResults' | transloco }}</p>
+                  </li>
+                }
+              </ul>
+              @if (filteredBranches().length > 0) {
+                <div class="branch-list-footer">
+                  <p class="branch-count" role="status" aria-live="polite">
+                    {{ 'branch.showing' | transloco: { shown: filteredBranches().length, total: branchTotal() } }}
+                  </p>
+                  @if (branchHasMore()) {
+                    <button
+                      type="button"
+                      class="branch-card branch-load-more"
+                      (click)="loadMoreBranches()"
+                      [disabled]="isLoadingMoreBranches()"
+                      [attr.aria-label]="'branch.loadMore' | transloco: { count: branchPageSize }"
+                    >
+                      <span class="branch-load-more-label">
+                        @if (isLoadingMoreBranches()) {
+                          {{ 'branch.loadingMore' | transloco }}
+                        } @else {
+                          {{ 'branch.loadMore' | transloco: { count: branchPageSize } }}
+                        }
+                      </span>
+                      <mat-icon aria-hidden="true" class="branch-load-more-icon">
+                        {{ isLoadingMoreBranches() ? 'hourglass_empty' : 'expand_more' }}
+                      </mat-icon>
+                    </button>
+                  }
+                </div>
+              }
+            }
+          </section>
+        }
+
+        @if (currentStep() === 2) {
+          <section class="panel" aria-labelledby="date-heading" aria-describedby="date-help">
+            <div class="panel-headline">
+              <div>
+                <h2 id="date-heading">{{ 'date.title' | transloco }}</h2>
+                <p id="date-help" class="panel-help">{{ 'date.help' | transloco }}</p>
+              </div>
+              <button mat-stroked-button type="button" (click)="goBack()">{{ 'date.changeBranch' | transloco }}</button>
+            </div>
+
+            <div class="summary-tag" role="status" aria-live="polite">
+              <mat-icon aria-hidden="true">location_on</mat-icon>
+              <span>{{ selectedBranchLabel() }}</span>
+            </div>
+
+            <div class="calendar-stage">
+              <mat-card class="calendar-card" aria-labelledby="date-heading">
+                <mat-calendar
+                  [selected]="selectedDate()"
+                  [minDate]="minDate"
+                  [maxDate]="maxDate"
+                  [dateFilter]="dateFilter"
+                  (selectedChange)="chooseDate($event)"
+                ></mat-calendar>
+              </mat-card>
+            </div>
+          </section>
+        }
+
+        @if (currentStep() === 3) {
+          <section class="panel" aria-labelledby="booking-slot-heading" aria-describedby="booking-slot-help">
+            <div class="panel-headline">
+              <div>
+                <h2 id="booking-slot-heading">{{ 'bookingSlot.title' | transloco }}</h2>
+                <p id="booking-slot-help" class="panel-help">{{ 'bookingSlot.help' | transloco }}</p>
+              </div>
+              <button mat-stroked-button type="button" (click)="goBack()">{{ 'bookingSlot.changeDate' | transloco }}</button>
+            </div>
+
+            <div class="summary-tag-row">
+              @if (selectedBranch()) {
+                <div class="summary-tag" role="status" aria-live="polite">
+                  <mat-icon aria-hidden="true">storefront</mat-icon>
+                  <span>{{ selectedBranchLabel() }}</span>
+                </div>
+              }
+              <div class="summary-tag" role="status" aria-live="polite">
+                <mat-icon aria-hidden="true">event</mat-icon>
+                <span>{{ selectedDateLabel() }}</span>
+              </div>
+            </div>
+
+            @if (isLoadingBookingSlots()) {
+              <p class="empty-state" role="status" aria-live="polite">{{ 'bookingSlot.loading' | transloco }}</p>
+            } @else if (bookingSlotErrorMessageKey()) {
+              <p class="empty-state" role="alert">{{ bookingSlotErrorMessageKey()! | transloco }}</p>
+            } @else if (availableBookingSlots().length > 0) {
+              <div class="booking-slot-grid" role="list" [attr.aria-label]="'bookingSlot.title' | transloco">
+                @for (bookingSlot of availableBookingSlots(); track bookingSlot.startDateTime) {
+                  <button
+                    type="button"
+                    class="booking-slot-button"
+                    (click)="chooseBookingSlot(bookingSlot)"
+                    [attr.aria-label]="bookingSlot.label + ', ' + ('bookingSlot.available' | transloco)"
+                  >
+                    <span>{{ bookingSlot.label }}</span>
+                    <small>{{ 'bookingSlot.available' | transloco }}</small>
+                  </button>
+                }
+              </div>
+            } @else {
+              <p class="empty-state">{{ 'bookingSlot.noSlots' | transloco }}</p>
+              <button mat-flat-button color="primary" type="button" (click)="goBack()">{{ 'bookingSlot.pickAnotherDate' | transloco }}</button>
+            }
+          </section>
+        }
+
+        @if (currentStep() === 4) {
+          <section class="panel" aria-labelledby="confirm-heading" aria-describedby="confirm-help">
+            <div class="panel-headline">
+              <div>
+                <h2 id="confirm-heading">{{ 'confirm.title' | transloco }}</h2>
+                <p id="confirm-help" class="panel-help">{{ 'confirm.help' | transloco }}</p>
+              </div>
+              @if (!confirmation()) {
+                <button mat-stroked-button type="button" (click)="goBack()">{{ 'confirm.changeTimeslot' | transloco }}</button>
+              }
+            </div>
+
+            @if (!confirmation()) {
+              <mat-card class="review-box" role="group" aria-labelledby="confirm-heading">
+                <mat-card-content>
+                  <p><span>{{ 'summary.branch' | transloco }}</span> {{ selectedBranchLabel() || '-' }}</p>
+                  <p><span>{{ 'summary.date' | transloco }}</span> {{ selectedDateLabel() || '-' }}</p>
+                  <p><span>{{ 'summary.time' | transloco }}</span> {{ selectedBookingSlot()?.label || '-' }}</p>
+                  <p><span>{{ 'summary.name' | transloco }}</span> {{ customerName() || '-' }}</p>
+                  <p><span>{{ 'summary.email' | transloco }}</span> {{ customerEmail() || '-' }}</p>
+                </mat-card-content>
+              </mat-card>
+
+              @if (authService.authenticated()) {
+                <button
+                  mat-flat-button
+                  color="primary"
+                  type="button"
+                  [disabled]="!canSubmitAppointment()"
+                  [attr.aria-busy]="isSubmitting() ? 'true' : null"
+                  (click)="submitAppointment()"
+                >
+                  @if (!isSubmitting()) {
+                    {{ 'confirm.submit' | transloco }}
+                  } @else {
+                    <span class="submit-state">
+                      <span class="loading-spinner" aria-hidden="true"></span>
+                      {{ 'confirm.submitting' | transloco }}
+                    </span>
+                  }
+                </button>
+                @if (!hasCustomerProfileDetails()) {
+                  <p class="empty-state" role="alert">{{ 'confirm.missingProfileDetails' | transloco }}</p>
+                }
+              } @else {
+                <div class="auth-inline-card">
+                  <p class="panel-help">{{ 'auth.bookingRequired' | transloco }}</p>
+                  <div class="auth-action-row">
+                    <button mat-flat-button color="primary" type="button" (click)="login()">{{ 'navbar.login' | transloco }}</button>
+                    <button mat-stroked-button type="button" (click)="register()">{{ 'navbar.register' | transloco }}</button>
+                  </div>
+                </div>
+              }
+            }
+
+            @if (confirmation(); as bookingConfirmation) {
+              <div
+                class="confirmation-box"
+                [class.success]="bookingConfirmation.success"
+                [class.error]="!bookingConfirmation.success"
+                [attr.role]="bookingConfirmation.success ? 'status' : 'alert'"
+                [attr.aria-live]="bookingConfirmation.success ? 'polite' : 'assertive'"
+              >
+                <mat-icon aria-hidden="true">{{ bookingConfirmation.success ? 'check_circle' : 'error' }}</mat-icon>
+                <div>
+                  <h3>{{ bookingConfirmation.success ? ('confirmation.successTitle' | transloco) : ('confirmation.errorTitle' | transloco) }}</h3>
+                  <p>{{ bookingConfirmation.messageKey | transloco }}</p>
+                  @if (bookingConfirmation.reference) {
+                    <p class="confirmation-reference">{{ 'confirmation.reference' | transloco }}: {{ bookingConfirmation.reference }}</p>
+                  }
+                </div>
+              </div>
+
+              <div class="action-row">
+                <button mat-flat-button color="primary" type="button" (click)="handleConfirmationAction(bookingConfirmation)">{{ confirmationActionLabelKey(bookingConfirmation) | transloco }}</button>
+              </div>
+            }
+          </section>
+        }
+      </mat-card-content>
+    </mat-card>
+  </section>
+</div>

@@ -1,0 +1,195 @@
+<section class="admin-page">
+  <header class="admin-page-header">
+    <h1 class="admin-page-title">{{ 'admin.title' | transloco }}</h1>
+    <button type="button" class="admin-page-sign-out" (click)="signOut()">{{ 'admin.signOut' | transloco }}</button>
+  </header>
+
+  @if (errorMessage(); as errorText) {
+    <div class="admin-page-alert admin-page-alert-error" role="alert">
+      {{ errorText.startsWith('admin.') ? (errorText | transloco) : errorText }}
+    </div>
+  }
+  @if (successMessage(); as successMessageKey) {
+    <div class="admin-page-alert admin-page-alert-success" role="status">{{ successMessageKey | transloco }}</div>
+  }
+
+  <div class="admin-page-grid">
+    <article class="admin-card">
+      <h2 class="admin-card-title">
+        {{ editingId() ? ('admin.editTitle' | transloco) : ('admin.createTitle' | transloco) }}
+      </h2>
+      <form class="admin-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div class="admin-form-row">
+          <label>
+            {{ 'admin.fields.code' | transloco }}
+            <input type="text" formControlName="code" maxlength="40" />
+          </label>
+          <label>
+            {{ 'admin.fields.name' | transloco }}
+            <input type="text" formControlName="name" maxlength="160" />
+          </label>
+        </div>
+        <div class="admin-form-row">
+          <label>
+            {{ 'admin.fields.city' | transloco }}
+            <input type="text" formControlName="city" maxlength="80" />
+          </label>
+          <label>
+            {{ 'admin.fields.province' | transloco }}
+            <select class="admin-form-select" formControlName="province">
+              <option value="">{{ 'admin.fields.provincePlaceholder' | transloco }}</option>
+              @for (p of provincesForSelectedCountry(); track p) {
+                <option [value]="p">{{ p }}</option>
+              }
+            </select>
+          </label>
+        </div>
+        <label>
+          {{ 'admin.fields.address' | transloco }}
+          <input type="text" formControlName="address" maxlength="240" />
+        </label>
+        <label>
+          {{ 'admin.fields.country' | transloco }}
+          <select class="admin-form-select" formControlName="country">
+            @for (c of countries(); track c) {
+              <option [value]="c">{{ c }}</option>
+            }
+          </select>
+        </label>
+        <label>
+          {{ 'admin.fields.adminEmail' | transloco }}
+          <input
+            type="email"
+            formControlName="adminEmail"
+            maxlength="160"
+          />
+        </label>
+        <fieldset class="admin-form-hours">
+          <legend>{{ 'admin.fields.hours' | transloco }}</legend>
+          <div class="admin-form-hours-grid">
+            <label>
+              <span class="admin-form-hours-label">{{ 'admin.fields.openingTime' | transloco }}</span>
+              <select class="admin-form-select admin-form-time" formControlName="openingTime">
+                @for (group of timeSlotGroups; track group.label) {
+                  <optgroup [label]="group.label">
+                    @for (timeOption of group.timeOptions; track timeOption.value) {
+                      <option [value]="timeOption.value">{{ timeOption.label }}</option>
+                    }
+                  </optgroup>
+                }
+              </select>
+            </label>
+            <span class="admin-form-hours-separator" aria-hidden="true">to</span>
+            <label>
+              <span class="admin-form-hours-label">{{ 'admin.fields.closingTime' | transloco }}</span>
+              <select class="admin-form-select admin-form-time" formControlName="closingTime">
+                @for (group of timeSlotGroups; track group.label) {
+                  <optgroup [label]="group.label">
+                    @for (timeOption of group.timeOptions; track timeOption.value) {
+                      <option [value]="timeOption.value">{{ timeOption.label }}</option>
+                    }
+                  </optgroup>
+                }
+              </select>
+            </label>
+          </div>
+        </fieldset>
+        <div class="admin-form-actions">
+          @if (editingId()) {
+            <button type="button" class="admin-form-secondary-button" (click)="cancel()">{{ 'admin.cancel' | transloco }}</button>
+          }
+          <button type="submit" class="admin-form-submit-button" [disabled]="submitting()">
+            {{ submitting() ? ('admin.saving' | transloco) : (editingId() ? ('admin.save' | transloco) : ('admin.create' | transloco)) }}
+          </button>
+        </div>
+      </form>
+    </article>
+
+    <article class="admin-card">
+      <div class="admin-card-head">
+        <h2 class="admin-card-title">{{ 'admin.listTitle' | transloco }}</h2>
+        <span class="admin-card-count" [attr.aria-label]="'admin.totalLabel' | transloco">
+          <span class="admin-card-count-label">{{ 'admin.totalLabel' | transloco }}</span>
+          <span class="admin-card-count-value">{{ total() }}</span>
+        </span>
+        <input
+          type="search"
+          class="admin-card-search"
+          [placeholder]="'admin.searchPlaceholder' | transloco"
+          [value]="searchTerm()"
+          (input)="onSearchInput($event)"
+        />
+      </div>
+      @if (showInitialLoadingState()) {
+        <p class="admin-card-hint">{{ 'admin.loading' | transloco }}</p>
+      } @else if (showEmptyState()) {
+        <p class="admin-card-hint">{{ 'admin.empty' | transloco }}</p>
+      } @else {
+        @if (backgroundRefreshing()) {
+          <p class="admin-card-hint">{{ 'admin.loading' | transloco }}</p>
+        }
+        <div class="admin-table-wrapper">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>{{ 'admin.fields.code' | transloco }}</th>
+                <th>{{ 'admin.fields.name' | transloco }}</th>
+                <th>{{ 'admin.fields.city' | transloco }}</th>
+                <th>{{ 'admin.fields.hours' | transloco }}</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (branch of visibleBranches(); track branch.id) {
+                <tr [class.admin-table-row-inactive]="!branch.active">
+                  <td>{{ branch.code }}</td>
+                  <td>
+                    <span class="admin-table-name">{{ branch.name }}</span>
+                    @if (branch.address) {
+                      <span class="admin-table-secondary-text">{{ branch.address }}</span>
+                    }
+                  </td>
+                  <td>{{ branch.city }}</td>
+                  <td>{{ branch.openingTime.slice(0, 5) }} to {{ branch.closingTime.slice(0, 5) }}</td>
+                  <td class="admin-table-actions">
+                    <button type="button" class="admin-table-edit-button" (click)="edit(branch)">{{ 'admin.edit' | transloco }}</button>
+                    @if (branch.active) {
+                      <button
+                        type="button"
+                        class="admin-table-delete-button"
+                        [disabled]="isBranchStatusUpdatePending(branch.id)"
+                        (click)="deactivateBranch(branch)">
+                        {{ 'admin.delete' | transloco }}
+                      </button>
+                    } @else {
+                      <button
+                        type="button"
+                        class="admin-table-reactivate-button"
+                        [disabled]="isBranchStatusUpdatePending(branch.id)"
+                        (click)="reactivateBranch(branch)">
+                        {{ 'admin.reactivate' | transloco }}
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        @if (total() > 0) {
+          <div class="admin-pagination">
+            <button type="button" class="admin-pagination-button" [disabled]="startIndex() === 0 || loading()" (click)="previousPage()">
+              {{ 'admin.prev' | transloco }}
+            </button>
+            <span class="admin-pagination-status">
+              {{ 'admin.pageStatus' | transloco: { page: currentPage(), total: totalPages() } }}
+            </span>
+            <button type="button" class="admin-pagination-button" [disabled]="!hasMore() || loading()" (click)="nextPage()">
+              {{ 'admin.next' | transloco }}
+            </button>
+          </div>
+        }
+      }
+    </article>
+  </div>
+</section>

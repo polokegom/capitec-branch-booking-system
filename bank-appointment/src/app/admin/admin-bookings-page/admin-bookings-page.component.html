@@ -1,0 +1,136 @@
+<section class="admin-page">
+  <header class="admin-page-header">
+    <div>
+      <h1 class="admin-page-title">{{ 'admin.bookings.title' | transloco }}</h1>
+    </div>
+    <div class="admin-page-actions">
+      @if (authService.isOwner()) {
+        <button type="button" class="admin-page-navigation-button" (click)="goToBranches()">{{ 'admin.bookings.manageBranches' | transloco }}</button>
+      }
+      <button type="button" class="admin-page-sign-out" (click)="signOut()">{{ 'admin.signOut' | transloco }}</button>
+    </div>
+  </header>
+
+  @if (errorMessage(); as errorText) {
+    <div class="admin-page-alert admin-page-alert-error" role="alert">
+      {{ errorText.startsWith('admin.') ? (errorText | transloco) : errorText }}
+    </div>
+  }
+
+  <article class="admin-card">
+    <h2 class="admin-card-title">{{ 'admin.bookings.filters' | transloco }}</h2>
+    <form class="bookings-filters" (ngSubmit)="search()">
+      <label class="bookings-filters-field">
+        <span>{{ 'admin.bookings.searchBranch' | transloco }}</span>
+        <input
+          type="search"
+          [ngModel]="branchSearch()"
+          (ngModelChange)="branchSearch.set($event)"
+          name="branchSearch"
+          [placeholder]="'admin.bookings.searchPlaceholder' | transloco"
+        />
+      </label>
+      <label class="bookings-filters-field">
+        <span>{{ 'admin.bookings.dateFrom' | transloco }}</span>
+        <input
+          type="date"
+          [ngModel]="startDate()"
+          (ngModelChange)="startDate.set($event)"
+          name="startDate"
+        />
+      </label>
+      <label class="bookings-filters-field">
+        <span>{{ 'admin.bookings.dateTo' | transloco }}</span>
+        <input
+          type="date"
+          [ngModel]="endDate()"
+          (ngModelChange)="endDate.set($event)"
+          [min]="startDate()"
+          name="endDate"
+        />
+      </label>
+      <div class="bookings-filters-actions">
+        <button type="submit" class="bookings-filters-submit-button" [disabled]="!canSearch()" [class.is-loading]="loading()">
+          {{ 'admin.bookings.apply' | transloco }}
+        </button>
+        <button type="button" class="bookings-filters-reset-button" (click)="resetFilters()" [disabled]="loading()">
+          {{ 'admin.bookings.reset' | transloco }}
+        </button>
+      </div>
+    </form>
+  </article>
+
+  <article class="admin-card">
+    <div class="admin-card-head">
+      <h2 class="admin-card-title">{{ 'admin.bookings.results' | transloco }}</h2>
+      <span class="admin-card-count" [attr.aria-label]="'admin.totalLabel' | transloco">
+        <span class="admin-card-count-label">{{ 'admin.totalLabel' | transloco }}</span>
+        <span class="admin-card-count-value">{{ total() }}</span>
+      </span>
+    </div>
+
+    @if (showInitialLoadingState()) {
+      <p class="admin-card-hint">{{ 'admin.loading' | transloco }}</p>
+    } @else if (showEmptyState()) {
+      <p class="admin-card-hint">{{ 'admin.bookings.empty' | transloco }}</p>
+    } @else {
+      @if (backgroundRefreshing()) {
+        <p class="admin-card-hint">{{ 'admin.loading' | transloco }}</p>
+      }
+      @for (group of groupedBookings(); track group.branchName) {
+        <section class="bookings-group">
+          <h3 class="bookings-group-title">{{ group.branchName }}</h3>
+          <div class="admin-table-wrapper">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>{{ 'admin.bookings.date' | transloco }}</th>
+                  <th>{{ 'admin.bookings.time' | transloco }}</th>
+                  <th>{{ 'admin.bookings.reference' | transloco }}</th>
+                  <th>{{ 'admin.bookings.customer' | transloco }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (booking of group.items; track booking.id) {
+                  <tr>
+                    <td>{{ formatDate(booking.startDateTime) }}</td>
+                    <td>{{ formatTime(booking.startDateTime) }} - {{ formatTime(booking.endDateTime) }}</td>
+                    <td><span class="admin-table-name">{{ booking.bookingReference }}</span></td>
+                    <td>
+                      <span class="admin-table-name">{{ booking.customerName }}</span>
+                      <span class="admin-table-secondary-text">{{ booking.customerEmail }}</span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      }
+    }
+
+    @if (total() > 0) {
+      <div class="admin-pagination">
+        <button
+          type="button"
+          class="admin-pagination-button"
+          (click)="previousPage()"
+          [disabled]="startIndex() === 0 || loading()"
+        >
+          {{ 'admin.prev' | transloco }}
+        </button>
+        <span class="admin-pagination-status">
+          {{ 'admin.pageStatus' | transloco: { page: currentPage(), total: totalPages() } }}
+        </span>
+        <button
+          type="button"
+          class="admin-pagination-button"
+          (click)="nextPage()"
+          [disabled]="!hasMore() || loading()"
+        >
+          {{ 'admin.next' | transloco }}
+        </button>
+      </div>
+    }
+  </article>
+</section>

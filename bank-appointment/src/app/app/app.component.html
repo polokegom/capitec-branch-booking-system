@@ -1,0 +1,88 @@
+<div class="app-shell" [attr.lang]="activeLang">
+  <a class="skip-link" href="#main-content">{{ 'a11y.skipToContent' | transloco }}</a>
+  <header class="app-navbar">
+    <div class="app-navbar-inner">
+      <div class="navbar-top-row">
+        <a class="brand-group brand-link" routerLink="/" (click)="closeMobileNav()">
+          <div class="brand-copy" aria-hidden="true">
+            <img src="../../assets/images/capitec_official_logo.png" alt="Capitec Bank" class="brand-logo" style="width: 60%; height: auto;">
+          </div>
+        </a>
+
+        <button
+          type="button"
+          class="mobile-nav-toggle"
+          [class.is-open]="mobileNavOpen"
+          [attr.aria-expanded]="mobileNavOpen"
+          aria-controls="app-navbar-panel"
+          [attr.aria-label]="'navbar.primaryNavigation' | transloco"
+          (click)="toggleMobileNav()"
+        >
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+
+      <div id="app-navbar-panel" class="app-navbar-panel" [class.mobile-open]="mobileNavOpen">
+        <nav class="primary-nav" [attr.aria-label]="'navbar.primaryNavigation' | transloco">
+          @if (!authService.authenticated()) {
+            <button type="button" mat-button class="nav-link nav-button" (click)="login()">{{ 'navbar.login' | transloco }}</button>
+            <button type="button" mat-button class="nav-link nav-button" (click)="register()">{{ 'navbar.register' | transloco }}</button>
+          } @else {
+            @if (!authService.isStaff()) {
+              <a
+                mat-button
+                class="nav-link nav-button"
+                routerLink="/book"
+                (click)="closeMobileNav()"
+              >{{ 'navbar.createBookings' | transloco }}</a>
+              <a
+                mat-button
+                class="nav-link nav-button"
+                routerLink="/my-bookings"
+                (click)="closeMobileNav()"
+              >{{ 'navbar.viewBookings' | transloco }}</a>
+            }
+            <button type="button" mat-button class="nav-link nav-button" (click)="logout()">{{ 'navbar.logout' | transloco }}</button>
+          }
+        </nav>
+
+        <div class="navbar-actions">
+          <button
+            type="button"
+            class="language-switch"
+            mat-button
+            [matMenuTriggerFor]="languageMenu"
+            [attr.aria-label]="'navbar.language' | transloco"
+          >
+            <mat-icon class="language-switch-icon" aria-hidden="true">language</mat-icon>
+            <span class="language-switch-label">{{ activeLanguageOption().nativeLabel }}</span>
+            <mat-icon class="language-switch-caret" aria-hidden="true">expand_more</mat-icon>
+          </button>
+
+          <mat-menu #languageMenu="matMenu" class="language-menu" xPosition="before" yPosition="below">
+            <div class="language-menu-header" mat-menu-item disabled>
+              <span class="language-menu-title">{{ 'navbar.language' | transloco }}</span>
+            </div>
+            @for (language of languageOptions; track language.code) {
+              <button
+                type="button"
+                mat-menu-item
+                class="language-menu-item"
+                [class.is-active]="activeLang === language.code"
+                (click)="changeLanguage(language.code)"
+              >
+                <span class="language-menu-name">{{ language.nativeLabel }}</span>
+              </button>
+            }
+          </mat-menu>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content" class="page-shell" tabindex="-1">
+    <router-outlet></router-outlet>
+  </main>
+</div>
