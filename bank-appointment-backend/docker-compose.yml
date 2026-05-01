@@ -49,8 +49,10 @@ services:
       DATABASE_PASSWORD: fusionauth
       FUSIONAUTH_APP_MEMORY: 512M
       FUSIONAUTH_APP_RUNTIME_MODE: development
-      FUSIONAUTH_APP_DEFAULT_ADMIN_USERNAME: admin@capitec-booking.co.za
-      FUSIONAUTH_APP_DEFAULT_ADMIN_PASSWORD: password123
+      FUSIONAUTH_APP_OWNER_EMAIL: owner.lerato@gmail.co.za
+      FUSIONAUTH_APP_ADMIN_EMAIL: admin.naledi@gmail.co.za
+      FUSIONAUTH_APP_EXAMPLE_USER_EMAIL: amara.nkosi@gmail.co.za
+      FUSIONAUTH_APP_DEFAULT_PASSWORD: password123
       SEARCH_TYPE: database
       FUSIONAUTH_APP_URL: http://fusionauth:9011
       FUSIONAUTH_APP_KICKSTART_FILE: /usr/local/fusionauth/kickstart/kickstart.json
@@ -103,7 +105,7 @@ services:
       EMAIL_ASSETS_BASE_URL: ${EMAIL_ASSETS_BASE_URL:-https://capitec-booking-prod-597088041287-email-assets.s3.af-south-1.amazonaws.com}
       MAIL_HOST: mailhog
       MAIL_PORT: "1025"
-      OWNER_EMAIL: admin@capitec-booking.co.za
+      OWNER_EMAIL: owner.lerato@gmail.co.za
     ports:
       - "8080:8080"
     depends_on:

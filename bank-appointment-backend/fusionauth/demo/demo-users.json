@@ -3,60 +3,18 @@
     "email": "owner.lerato@capitec.co.za",
     "firstName": "Lerato",
     "lastName": "Khumalo",
-    "roles": ["owner", "customer"]
-  },
-  {
-    "email": "owner.thabo@capitec.co.za",
-    "firstName": "Thabo",
-    "lastName": "Maseko",
-    "roles": ["owner", "customer"]
+    "roles": ["owner"]
   },
   {
     "email": "admin.naledi@capitec.co.za",
     "firstName": "Naledi",
     "lastName": "Dlamini",
-    "roles": ["admin", "customer"]
+    "roles": ["admin"]
   },
   {
-    "email": "admin.sipho@capitec.co.za",
-    "firstName": "Sipho",
+    "email": "amara.nkosi@hotmail.com",
+    "firstName": "Amara",
     "lastName": "Nkosi",
-    "roles": ["admin", "customer"]
-  },
-  {
-    "email": "admin.zanele@capitec.co.za",
-    "firstName": "Zanele",
-    "lastName": "Mthembu",
-    "roles": ["admin", "customer"]
-  },
-  {
-    "email": "customer.amahle@example.co.za",
-    "firstName": "Amahle",
-    "lastName": "Pieterse",
-    "roles": ["customer"]
-  },
-  {
-    "email": "customer.bongani@example.co.za",
-    "firstName": "Bongani",
-    "lastName": "Nyathi",
-    "roles": ["customer"]
-  },
-  {
-    "email": "customer.chanel@example.co.za",
-    "firstName": "Chanel",
-    "lastName": "van der Merwe",
-    "roles": ["customer"]
-  },
-  {
-    "email": "customer.dineo@example.co.za",
-    "firstName": "Dineo",
-    "lastName": "Sithole",
-    "roles": ["customer"]
-  },
-  {
-    "email": "customer.ethan@example.co.za",
-    "firstName": "Ethan",
-    "lastName": "Pillay",
     "roles": ["customer"]
   }
 ]

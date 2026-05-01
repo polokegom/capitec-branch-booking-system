@@ -42,5 +42,5 @@ app:
     ses:
       configuration-set: "${MAIL_SES_CONFIGURATION_SET:}"
   security:
-    owner-email: "${OWNER_EMAIL:owner.lerato@capitec.co.za}"
+    owner-email: "${OWNER_EMAIL:owner.lerato@gmail.co.za}"
     bootstrap-owner: "${OWNER_BOOTSTRAP:true}"

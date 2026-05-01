@@ -55,7 +55,14 @@ The application itself is split between 3 different roles (Product-Owner, Bank-M
    - Swagger: http://localhost:8080/q/openapi
    - FusionAuth (local auth): http://localhost:9011
    - MailHog (email testing): http://localhost:8025
-   - Local owner login: admin@capitec-booking.co.za / password123
+   - Product owner login details: email: owner.lerato@gmail.co.za password: password123
+
+  ### Product Owner Login Details (manages branches, assigns admin users)
+  - email: owner.lerato@gmail.co.za
+  - password: password123
+  ### Customer Login Details
+  All you need to do register a user and validate the emails legitimacy using MailHog which will be running locally as part of the cluster (http://localhost:8025)
+
 
 4. **Stopping the Application**
 To stop all running services on the Capitec Appointment Booking System use the below scripts:

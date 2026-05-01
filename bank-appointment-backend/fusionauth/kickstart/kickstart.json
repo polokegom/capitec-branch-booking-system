@@ -6,8 +6,10 @@
     "lambdaId": "5641b8a2-d567-4ec9-aa54-1e0d83eea33f",
     "themeId": "ca91dec0-7777-4f0f-9e30-a14db66614c1",
     "asymmetricKeyId": "#{UUID()}",
-    "adminEmail": "admin@capitec-booking.co.za",
-    "adminPassword": "password123"
+    "ownerEmail": "owner.lerato@gmail.co.za",
+    "adminEmail": "admin.naledi@gmail.co.za",
+    "exampleUserEmail": "amara.nkosi@gmail.co.za",
+    "defaultPassword": "password123"
   },
   "apiKeys": [
     {
@@ -194,15 +196,35 @@
         "skipVerification": true,
         "skipRegistrationVerification": true,
         "user": {
+          "email": "#{ownerEmail}",
+          "firstName": "Lerato",
+          "lastName": "Khumalo",
+          "password": "#{defaultPassword}",
+          "verified": true
+        },
+        "registration": {
+          "applicationId": "#{applicationId}",
+          "roles": ["owner"],
+          "verified": true
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "url": "/api/user/registration",
+      "body": {
+        "skipVerification": true,
+        "skipRegistrationVerification": true,
+        "user": {
           "email": "#{adminEmail}",
-          "firstName": "Admin",
-          "lastName": "User",
-          "password": "#{adminPassword}",
+          "firstName": "Naledi",
+          "lastName": "Dlamini",
+          "password": "#{defaultPassword}",
           "verified": true
         },
         "registration": {
           "applicationId": "#{applicationId}",
-          "roles": ["owner", "customer"],
+          "roles": ["admin"],
           "verified": true
         }
       }
@@ -214,30 +236,10 @@
         "skipVerification": true,
         "skipRegistrationVerification": true,
         "user": {
-          "email": "demo.customer@capitec.co.za",
-          "firstName": "Demo",
-          "lastName": "Customer",
-          "password": "password123",
-          "verified": true
-        },
-        "registration": {
-          "applicationId": "#{applicationId}",
-          "roles": ["customer"],
-          "verified": true
-        }
-      }
-    },
-    {
-      "method": "POST",
-      "url": "/api/user/registration",
-      "body": {
-        "skipVerification": true,
-        "skipRegistrationVerification": true,
-        "user": {
-          "email": "penelope@capitec.co.za",
-          "firstName": "Penelope",
-          "lastName": "Mokoena",
-          "password": "password123",
+          "email": "#{exampleUserEmail}",
+          "firstName": "Amara",
+          "lastName": "Nkosi",
+          "password": "#{defaultPassword}",
           "verified": true
         },
         "registration": {

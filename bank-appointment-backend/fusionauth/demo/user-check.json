@@ -1,0 +1,18 @@
+[
+    {
+        "email":  "owner.lerato@gmail.co.za",
+        "exists":  true
+    },
+    {
+        "email":  "admin.naledi@gmail.co.za",
+        "exists":  true
+    },
+    {
+        "email":  "customer.amahle@gmail.co.za",
+        "exists":  true
+    },
+    {
+        "email":  "owner.lerato@capitec.co.za",
+        "exists":  false
+    }
+]

@@ -9,8 +9,10 @@ public_base_url="${FUSIONAUTH_PUBLIC_BASE_URL:-${allowed_origin}}"
 issuer="${FUSIONAUTH_ISSUER:-http://localhost:9011}"
 redirect_url="${FUSIONAUTH_REDIRECT_URL:-${allowed_origin}/auth/callback}"
 logout_url="${FUSIONAUTH_LOGOUT_URL:-${allowed_origin}/}"
-admin_email="${FUSIONAUTH_APP_DEFAULT_ADMIN_USERNAME:-admin@capitec-booking.co.za}"
-admin_password="${FUSIONAUTH_APP_DEFAULT_ADMIN_PASSWORD:-password123}"
+owner_email="${FUSIONAUTH_APP_OWNER_EMAIL:-${FUSIONAUTH_APP_DEFAULT_ADMIN_USERNAME:-owner.lerato@gmail.co.za}}"
+admin_email="${FUSIONAUTH_APP_ADMIN_EMAIL:-admin.naledi@gmail.co.za}"
+example_user_email="${FUSIONAUTH_APP_EXAMPLE_USER_EMAIL:-amara.nkosi@gmail.co.za}"
+default_password="${FUSIONAUTH_APP_DEFAULT_PASSWORD:-${FUSIONAUTH_APP_DEFAULT_ADMIN_PASSWORD:-password123}}"
 api_key="${FUSIONAUTH_API_KEY:-bf69486b-4733-4470-a592-f1bfce7af580}"
 application_id="${FUSIONAUTH_APPLICATION_ID:-85a03867-dccf-4882-adde-1a79aeec50df}"
 smtp_host="${FUSIONAUTH_SMTP_HOST:-mailhog}"
@@ -45,8 +47,10 @@ allowed_origin_escaped="$(escape_sed_replacement "$allowed_origin")"
 issuer_escaped="$(escape_sed_replacement "$issuer")"
 redirect_url_escaped="$(escape_sed_replacement "$redirect_url")"
 logout_url_escaped="$(escape_sed_replacement "$logout_url")"
+owner_email_escaped="$(escape_sed_replacement "$owner_email")"
 admin_email_escaped="$(escape_sed_replacement "$admin_email")"
-admin_password_escaped="$(escape_sed_replacement "$admin_password")"
+example_user_email_escaped="$(escape_sed_replacement "$example_user_email")"
+default_password_escaped="$(escape_sed_replacement "$default_password")"
 api_key_escaped="$(escape_sed_replacement "$api_key")"
 application_id_escaped="$(escape_sed_replacement "$application_id")"
 smtp_host_escaped="$(escape_sed_replacement "$smtp_host")"
@@ -69,8 +73,10 @@ sed \
   -e "s|http://localhost:4200/|${logout_url_escaped}|g" \
   -e "s|http://localhost:4200|${allowed_origin_escaped}|g" \
   -e "s|http://localhost:9011|${issuer_escaped}|g" \
-  -e "s|admin@capitec-booking.co.za|${admin_email_escaped}|g" \
-  -e "s|\"adminPassword\": \"password123\"|\"adminPassword\": \"${admin_password_escaped}\"|g" \
+  -e "s|owner.lerato@gmail.co.za|${owner_email_escaped}|g" \
+  -e "s|admin.naledi@gmail.co.za|${admin_email_escaped}|g" \
+  -e "s|amara.nkosi@gmail.co.za|${example_user_email_escaped}|g" \
+  -e "s|\"defaultPassword\": \"password123\"|\"defaultPassword\": \"${default_password_escaped}\"|g" \
   -e "s|bf69486b-4733-4470-a592-f1bfce7af580|${api_key_escaped}|g" \
   -e "s|85a03867-dccf-4882-adde-1a79aeec50df|${application_id_escaped}|g" \
   -e "s|no-reply@capitec-booking.co.za|${mail_from_escaped}|g" \
