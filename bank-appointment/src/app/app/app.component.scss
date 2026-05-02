@@ -41,6 +41,11 @@ section.panel-surface[aria-labelledby='page-title'] > div {
   }
 }
 
+.brand-logo {
+  width: 175px;
+  height: auto;
+}
+
 .panel-help {
   color: var(--muted);
   font-size: 1rem;
@@ -490,11 +495,6 @@ section.panel-surface[aria-labelledby='page-title'] > div {
   .app-navbar-inner {
     padding-top: 0.8rem;
     padding-bottom: 0.8rem;
-  }
-
-  .brand-logo {
-    width: 180px;
-    max-width: 58vw;
   }
 
   .nav-link {
