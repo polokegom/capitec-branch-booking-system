@@ -78,7 +78,7 @@
     "title": "Bhuka ukuvakashela igatsha"
   },
   "home": {
-    "title": "Bhuka ukuvakashela igatsha lakho lasendaweni",
+    "title": "Bhuka ukuvakashela igatsha",
     "imageAlt": "Ukubhuka i-aphoyintimenti yegatsha laseCapitec"
   },
   "steps": {
@@ -105,7 +105,6 @@
   },
   "bookingSlot": {
     "title": "Khetha isikhathi",
-    "help": "Izikhathi ezitholakalayo ziguquka ngokwegatsha nosuku.",
     "changeDate": "Shintsha usuku",
     "loading": "Sihlola ukutholakala kwezikhathi...",
     "loadError": "Asikwazi ukulayisha ukutholakala kwezikhathi okwamanje. Sicela uzame futhi.",
@@ -153,7 +152,7 @@
     "responseMissingToken": "Impendulo yokuqinisekisa ayinayo ithokheni."
   },
   "login": {
-    "title": "Ngena ku-akhawunti yakho",
+    "title": "Ngena",
     "email": "Ikheli le-imeyili",
     "emailInvalid": "Sicela ufake ikheli le-imeyili elivumelekile.",
     "password": "Iphasiwedi",
@@ -171,7 +170,7 @@
     "emailVerificationUnavailable": "Asikwazanga ukuqinisekisa i-imeyili yakho manje. Sicela uzame futhi emizuzwini embalwa."
   },
   "register": {
-    "title": "Dala i-akhawunti yakho",
+    "title": "Bhalisa",
     "firstName": "Igama",
     "firstNameRequired": "Igama liyadingeka.",
     "lastName": "Isibongo",

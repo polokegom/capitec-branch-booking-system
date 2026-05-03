@@ -78,7 +78,7 @@
     "title": "Beeletsa ketelo ya lekala"
   },
   "home": {
-    "title": "Beeletša ketelo lekaleng la gago la lefelo",
+    "title": "Beeletsa ketelo ya lekala",
     "imageAlt": "Peeletšo ya kopano ya lekala la Capitec"
   },
   "steps": {
@@ -105,7 +105,6 @@
   },
   "bookingSlot": {
     "title": "Kgetha nako",
-    "help": "Dinako tše di lego gona di mpshafatšwa go ya ka lekala le letšatši.",
     "changeDate": "Fetola letšatši",
     "loading": "Re lekola go ba gona ga dinako...",
     "loadError": "Ga re kgone go laisa go hwetšagala ga dinako gona bjale. Hle leka gape.",
@@ -153,7 +152,7 @@
     "responseMissingToken": "Karabo ya netefatšo ga e na token."
   },
   "login": {
-    "title": "Tsena akhaonteng ya gago",
+    "title": "Tsena",
     "email": "Aterese ya imeile",
     "emailInvalid": "Hle tsenya aterese ya imeile ye e nepagetšego.",
     "password": "Lentšu la sephiri",
@@ -171,7 +170,7 @@
     "emailVerificationUnavailable": "Ga re kgone go netefatša imeile ya gago gona bjale. Hle leka gape ka morago ga metsotso e mmalwa."
   },
   "register": {
-    "title": "Hlama akhaonto ya gago",
+    "title": "Ingwadiše",
     "firstName": "Leina la pele",
     "firstNameRequired": "Leina la pele le a hlokega.",
     "lastName": "Sefane",

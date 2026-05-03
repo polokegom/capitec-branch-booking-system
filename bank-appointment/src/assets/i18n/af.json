@@ -78,7 +78,7 @@
     "title": "Bespreek jou takbesoek"
   },
   "home": {
-    "title": "Bespreek 'n besoek aan jou plaaslike tak",
+    "title": "Bespreek jou takbesoek",
     "imageAlt": "Capitec-takafspraakbespreking"
   },
   "steps": {
@@ -105,7 +105,6 @@
   },
   "bookingSlot": {
     "title": "Kies 'n tydgleuf",
-    "help": "Beskikbare tydgleuwe word volgens tak en datum verfris.",
     "changeDate": "Verander datum",
     "loading": "Kontroleer regstreekse beskikbaarheid...",
     "loadError": "Ons kon nie nou beskikbaarheid laai nie. Probeer asseblief weer.",
@@ -153,7 +152,7 @@
     "responseMissingToken": "Die aanmeldingsreaksie het nie 'n token bevat nie."
   },
   "login": {
-    "title": "Teken by jou rekening in",
+    "title": "Teken in",
     "email": "E-posadres",
     "emailInvalid": "Voer asseblief 'n geldige e-posadres in.",
     "password": "Wagwoord",
@@ -171,7 +170,7 @@
     "emailVerificationUnavailable": "Ons kon nie jou e-pos nou verifieer nie. Probeer asseblief oor 'n paar minute weer."
   },
   "register": {
-    "title": "Skep jou rekening",
+    "title": "Registreer",
     "firstName": "Voornaam",
     "firstNameRequired": "Voornaam is nodig.",
     "lastName": "Van",

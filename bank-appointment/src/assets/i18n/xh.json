@@ -78,7 +78,7 @@
     "title": "Bhukisha utyelelo lwesebe"
   },
   "home": {
-    "title": "Bhukisha utyelelo kwisebe lakho lasekuhlaleni",
+    "title": "Bhukisha utyelelo lwesebe",
     "imageAlt": "Ukubhukisha idinga lesebe laseCapitec"
   },
   "steps": {
@@ -105,7 +105,6 @@
   },
   "bookingSlot": {
     "title": "Khetha ixesha",
-    "help": "Amaxesha akhoyo ahlaziywa ngokwesebe nomhla.",
     "changeDate": "Tshintsha umhla",
     "loading": "Sijonga amaxesha akhoyo...",
     "loadError": "Asikwazi ukulayisha ukufumaneka kwamaxesha ngoku. Nceda uzame kwakhona.",
@@ -153,7 +152,7 @@
     "responseMissingToken": "Impendulo yokuqinisekisa ayinayo ithokheni."
   },
   "login": {
-    "title": "Ngena kwiakhawunti yakho",
+    "title": "Ngena",
     "email": "Idilesi ye-imeyile",
     "emailInvalid": "Nceda ufake idilesi ye-imeyile esebenzayo.",
     "password": "Igama eliyimfihlo",
@@ -171,7 +170,7 @@
     "emailVerificationUnavailable": "Asikwazanga ukuqinisekisa i-imeyile yakho ngoku. Nceda uzame kwakhona emva kwemizuzu embalwa."
   },
   "register": {
-    "title": "Yenza iakhawunti yakho",
+    "title": "Bhalisa",
     "firstName": "Igama",
     "firstNameRequired": "Igama liyafuneka.",
     "lastName": "Ifani",
