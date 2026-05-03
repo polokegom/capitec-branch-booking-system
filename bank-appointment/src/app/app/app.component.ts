@@ -1,4 +1,4 @@
-import { Component, HostListener, OnInit, ViewEncapsulation, inject } from '@angular/core';
+import { Component, HostListener, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -20,8 +20,7 @@ import { AuthService } from '../services/auth.service';
     MatMenuModule
   ],
   templateUrl: './app.component.html',
-  styleUrl: './app.component.scss',
-  encapsulation: ViewEncapsulation.None
+  styleUrl: './app.component.scss'
 })
 export class AppComponent implements OnInit {
   readonly title = 'capitec-booking';

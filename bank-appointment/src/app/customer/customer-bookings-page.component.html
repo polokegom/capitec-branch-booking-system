@@ -1,26 +1,26 @@
-<section class="admin-page">
-  <header class="admin-page-header">
+<section class="management-page">
+  <header class="management-page-header">
     <div>
-      <h1 class="admin-page-title">{{ 'customer.bookings.title' | transloco }}</h1>
+      <h1 class="management-page-title">{{ 'customer.bookings.title' | transloco }}</h1>
     </div>
-    <div class="admin-page-actions">
-      <button type="button" class="admin-page-navigation-button" (click)="goToBook()">
+    <div class="management-page-actions">
+      <button type="button" class="management-page-navigation-button" (click)="goToBook()">
         {{ 'customer.bookings.createBooking' | transloco }}
       </button>
-      <button type="button" class="admin-page-sign-out" (click)="signOut()">
+      <button type="button" class="management-page-sign-out" (click)="signOut()">
         {{ 'admin.signOut' | transloco }}
       </button>
     </div>
   </header>
 
   @if (errorMessage(); as errorText) {
-    <div class="admin-page-alert admin-page-alert-error" role="alert">
+    <div class="management-page-alert management-page-alert-error" role="alert">
       {{ errorText.startsWith('customer.') || errorText.startsWith('admin.') ? (errorText | transloco) : errorText }}
     </div>
   }
 
-  <article class="admin-card">
-    <h2 class="admin-card-title">{{ 'customer.bookings.filters' | transloco }}</h2>
+  <article class="management-card">
+    <h2 class="management-card-title">{{ 'customer.bookings.filters' | transloco }}</h2>
     <form class="bookings-filters" (ngSubmit)="search()">
       <label class="bookings-filters-field">
         <span>{{ 'customer.bookings.searchBranch' | transloco }}</span>
@@ -57,7 +57,7 @@
           [ngModel]="statusFilter()"
           (ngModelChange)="statusFilter.set($event)"
           name="statusFilter"
-          class="admin-form-select"
+          class="management-form-select"
         >
           <option value="all">{{ 'customer.bookings.statusAll' | transloco }}</option>
           <option value="active">{{ 'customer.bookings.status_active' | transloco }}</option>
@@ -76,22 +76,22 @@
     </form>
   </article>
 
-  <article class="admin-card">
-    <div class="admin-card-head">
-      <h2 class="admin-card-title">{{ 'customer.bookings.results' | transloco }}</h2>
-      <span class="admin-card-count" [attr.aria-label]="'admin.totalLabel' | transloco">
-        <span class="admin-card-count-label">{{ 'admin.totalLabel' | transloco }}</span>
-        <span class="admin-card-count-value">{{ total() }}</span>
+  <article class="management-card">
+    <div class="management-card-header">
+      <h2 class="management-card-title">{{ 'customer.bookings.results' | transloco }}</h2>
+      <span class="management-count-badge" [attr.aria-label]="'admin.totalLabel' | transloco">
+        <span class="management-count-badge-label">{{ 'admin.totalLabel' | transloco }}</span>
+        <span class="management-count-badge-value">{{ total() }}</span>
       </span>
     </div>
 
     @if (showInitialLoadingState()) {
-      <p class="admin-card-hint">{{ 'admin.loading' | transloco }}</p>
+      <p class="management-card-hint">{{ 'admin.loading' | transloco }}</p>
     } @else if (showEmptyState()) {
-      <p class="admin-card-hint">{{ 'customer.bookings.empty' | transloco }}</p>
+      <p class="management-card-hint">{{ 'customer.bookings.empty' | transloco }}</p>
     } @else {
       @if (backgroundRefreshing()) {
-        <p class="admin-card-hint">{{ 'admin.loading' | transloco }}</p>
+        <p class="management-card-hint">{{ 'admin.loading' | transloco }}</p>
       }
       @for (group of statusGroups(); track group.key) {
         <section class="bookings-group">
@@ -101,15 +101,15 @@
             </span>
             <span class="bookings-group-count">{{ group.items.length }}</span>
           </h3>
-          <div class="admin-table-wrapper">
-            <table class="admin-table">
+          <div class="management-table-wrapper">
+            <table class="management-table">
               <thead>
                 <tr>
                   <th>{{ 'customer.bookings.date' | transloco }}</th>
                   <th>{{ 'customer.bookings.time' | transloco }}</th>
                   <th>{{ 'customer.bookings.branch' | transloco }}</th>
                   <th>{{ 'customer.bookings.reference' | transloco }}</th>
-                  <th class="admin-table-actions-col">{{ 'customer.bookings.actions' | transloco }}</th>
+                  <th class="management-table-actions-column">{{ 'customer.bookings.actions' | transloco }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -118,12 +118,12 @@
                     <td>{{ formatDate(booking.startDateTime) }}</td>
                     <td>{{ formatTime(booking.startDateTime) }} to {{ formatTime(booking.endDateTime) }}</td>
                     <td>
-                      <span class="admin-table-name">{{ booking.branchName ?? '-' }}</span>
+                      <span class="management-table-primary-text">{{ booking.branchName ?? '-' }}</span>
                       @if (booking.branchCity) {
-                        <span class="admin-table-secondary-text">{{ booking.branchCity }}</span>
+                        <span class="management-table-secondary-text">{{ booking.branchCity }}</span>
                       }
                     </td>
-                    <td><span class="admin-table-name">{{ booking.bookingReference }}</span></td>
+                    <td><span class="management-table-primary-text">{{ booking.bookingReference }}</span></td>
                     <td>
                       @if (isCancellable(booking)) {
                         <button
@@ -135,7 +135,7 @@
                           {{ cancellingReference() === booking.bookingReference ? ('customer.bookings.cancelling' | transloco) : ('customer.bookings.cancel' | transloco) }}
                         </button>
                       } @else {
-                        <span class="admin-table-secondary-text">-</span>
+                        <span class="management-table-secondary-text">-</span>
                       }
                     </td>
                   </tr>
@@ -148,21 +148,21 @@
     }
 
     @if (total() > 0) {
-      <div class="admin-pagination">
+      <div class="management-pagination">
         <button
           type="button"
-          class="admin-pagination-button"
+          class="management-pagination-button"
           (click)="previousPage()"
           [disabled]="startIndex() === 0 || loading()"
         >
           {{ 'admin.prev' | transloco }}
         </button>
-        <span class="admin-pagination-status">
+        <span class="management-pagination-status">
           {{ 'admin.pageStatus' | transloco: { page: currentPage(), total: totalPages() } }}
         </span>
         <button
           type="button"
-          class="admin-pagination-button"
+          class="management-pagination-button"
           (click)="nextPage()"
           [disabled]="!hasMore() || loading()"
         >

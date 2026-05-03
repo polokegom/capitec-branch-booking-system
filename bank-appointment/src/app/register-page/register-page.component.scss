@@ -1,4 +1,4 @@
-@import '../login-page/login-page.component.scss';
+@use '../shared/styles/authentication-pages';
 
 .auth-form-row {
   display: grid;

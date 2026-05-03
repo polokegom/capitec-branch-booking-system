@@ -1,4 +1,5 @@
-@use '../admin/admin-bookings-page/admin-bookings-page.component.scss';
+@use '../shared/styles/management-layout';
+@use '../shared/styles/booking-results';
 
 .status-tag {
   display: inline-block;
@@ -25,7 +26,7 @@
   color: #842029;
 }
 
-.admin-table-actions-col {
+.management-table-actions-column {
   width: 130px;
 }
 
