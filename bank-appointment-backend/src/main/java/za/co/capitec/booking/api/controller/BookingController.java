@@ -77,6 +77,7 @@ public class BookingController {
 
   @GET
   @Path("/bookings/{bookingReference}")
+  @Authenticated
   public Uni<BookingResponse> findBooking(@PathParam("bookingReference") @NotBlank String bookingReference) {
     return bookingQueryService.findByReference(bookingReference)
       .map(apiMapper::toBookingResponse);

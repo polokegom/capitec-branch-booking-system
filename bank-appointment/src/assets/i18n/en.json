@@ -105,7 +105,6 @@
   },
   "bookingSlot": {
     "title": "Select a timeslot",
-    "help": "Available slots refresh based on the branch and date.",
     "changeDate": "Change date",
     "loading": "Checking live availability...",
     "loadError": "We couldn't load availability right now. Please try again.",

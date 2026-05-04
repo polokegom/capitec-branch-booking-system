@@ -7,7 +7,9 @@ import { AuthService } from './services/auth.service';
 const PROTECTED_API_PREFIXES = [
   '/api/v1/bookings',
   '/api/v1/customer',
-  '/api/v1/admin'
+  '/api/v1/admin',
+  '/api/v1/branches',
+  '/api/v1/availability'
 ];
 
 export const authTokenInterceptor: HttpInterceptorFn = (request, next) => {

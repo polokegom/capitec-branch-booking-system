@@ -1,5 +1,6 @@
 package za.co.capitec.booking.api.controller;
 
+import io.quarkus.security.Authenticated;
 import io.smallrye.mutiny.Uni;
 import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.GET;
@@ -23,6 +24,7 @@ public class AvailabilityController {
   private final ApiMapper apiMapper;
 
   @GET
+  @Authenticated
   public Uni<List<BookingSlotAvailabilityResponse>> getAvailability(
     @QueryParam("branchId") @NotNull UUID branchId,
     @QueryParam("date") @NotNull LocalDate appointmentDate

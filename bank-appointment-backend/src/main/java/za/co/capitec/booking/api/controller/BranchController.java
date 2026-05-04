@@ -1,5 +1,6 @@
 package za.co.capitec.booking.api.controller;
 
+import io.quarkus.security.Authenticated;
 import io.smallrye.mutiny.Uni;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.validation.Valid;
@@ -43,6 +44,7 @@ public class BranchController {
 
   @GET
   @Path("/branches")
+  @Authenticated
   public Uni<PaginationResponse<BranchResponse>> searchBranches(
     @QueryParam("query") @DefaultValue("") String query,
     @QueryParam("startIndex") Integer startIndex,
@@ -55,6 +57,7 @@ public class BranchController {
 
   @GET
   @Path("/branches/countries")
+  @Authenticated
   public Uni<Map<String, List<String>>> listCountriesWithBankBranches() {
     return Uni.createFrom().item(countriesWithBankBranches.provinces());
   }

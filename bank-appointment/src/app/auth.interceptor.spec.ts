@@ -33,9 +33,29 @@ describe('authTokenInterceptor', () => {
     expect(handledRequests[0].headers.get('Authorization')).toBe('Bearer access-token');
   });
 
-  it('does not request a token for public API requests', async () => {
+  it('adds the bearer token to branches and availability requests', async () => {
+    authService.getAccessToken.mockResolvedValue('access-token');
     const handledRequests: HttpRequest<unknown>[] = [];
-    const request = new HttpRequest('GET', '/api/v1/branches');
+    const next: HttpHandlerFn = (nextRequest) => {
+      handledRequests.push(nextRequest);
+      return of(new HttpResponse({ status: 200 }));
+    };
+
+    await TestBed.runInInjectionContext(() =>
+      firstValueFrom(authTokenInterceptor(new HttpRequest('GET', '/api/v1/branches'), next))
+    );
+
+    await TestBed.runInInjectionContext(() =>
+      firstValueFrom(authTokenInterceptor(new HttpRequest('GET', '/api/v1/availability'), next))
+    );
+
+    expect(handledRequests[0].headers.get('Authorization')).toBe('Bearer access-token');
+    expect(handledRequests[1].headers.get('Authorization')).toBe('Bearer access-token');
+  });
+
+  it('does not request a token for public requests', async () => {
+    const handledRequests: HttpRequest<unknown>[] = [];
+    const request = new HttpRequest('GET', '/assets/i18n/en.json');
     const next: HttpHandlerFn = (nextRequest) => {
       handledRequests.push(nextRequest);
       return of(new HttpResponse({ status: 200 }));

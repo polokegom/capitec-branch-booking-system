@@ -1,11 +1,12 @@
 @use '../shared/styles/authentication-pages';
 
 .auth-form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-wrap: wrap;
   gap: 1.1rem;
 
-  @media (max-width: 540px) {
-    grid-template-columns: 1fr;
+  > * {
+    flex: 1 1 14rem;
+    min-width: 0;
   }
 }
