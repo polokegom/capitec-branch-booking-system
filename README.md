@@ -7,7 +7,10 @@ The application itself is split between 3 different roles (Product-Owner, Bank-M
 - Administrator - Is responsible for monitoring all the daily appointment books for 1 or more branches.
 - Customer - Is responsible for booking appointments with the bank branch.
 
-## Requirements
+You can view the application live with the following domain name:
+https://app.polokego-booking-system.co.za/
+
+## Requirements for Local Development
 
 - **Docker** and **Docker Compose** (for local development)
 - **Java 21** (for backend development outside Docker)
@@ -78,13 +81,13 @@ To stop all running services on the Capitec Appointment Booking System use the b
     ./scripts/linux/stop-local-stack.sh
     ```
 
-## Overview of cloud architecture
+## Overview of cloud architecture for Prod
 ![Alt Text](documentation_assets/booking_system_app_infrastructure_architecture.png)
 1. ECR is the image registry used to manage versioning of the live application (frontend, backend, fushionauth server)
 2. ECS is the orchestration engine used to run all services of the application by pulling the latest changes from ECR
-3. RDS for PostgreSQL is a relational database used to manage the systems persistent storage. The reason for using RDS is due to its structured nature for data storage and ACID compliance.
+3. RDS for PostgreSQL is a relational database used to manage the systems persistent storage. The reason for using RDS is due to its ACID-compliant transactions, structured schema enforcement, and AWS managed operational features such as automated backups, patching, high availability and built in fault taulerant features. A bonus benefit is that Data Analysts will also not struggle in extracting value from our data due to its structured nature.
 4. SES acts as the SMTP server of the system that is used to send emails to clients.
-5. S3 is used to store the systems images which are used when building the systems emails
+5. S3 is used to store the applications public images which are referenced in the emails send to clients for confirmation and cancelling of bookings
 6. ALB is used to manage incoming traffic that is calling the applications services.
-7. Route 53 manages the applications DNS records and domain name routing.
+7. Route 53 manages the applications DNS records and domain name routing (PLEASE NOTE, due to personal costs. I chose Domain.co.za to acquire the domain name and manage the DNS Records from it. It was much simpler & cheaper for me).
 8. User using the application on their browser.
