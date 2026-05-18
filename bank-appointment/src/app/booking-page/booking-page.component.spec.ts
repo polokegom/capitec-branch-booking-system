@@ -18,7 +18,7 @@ describe('BookingPageComponent', () => {
   const authServiceMock = {
     authenticated: signal(true),
     displayName: signal('Repro Customer'),
-    email: signal('repro.customer@example.com'),
+    email: signal('repro.customer@capitec.com'),
     roles: signal<string[]>([])
   };
 
@@ -121,7 +121,7 @@ describe('BookingPageComponent', () => {
       startDateTime: '2026-05-04T08:00:00',
       endDateTime: '2026-05-04T08:30:00',
       customerName: 'Repro Customer',
-      customerEmail: 'repro.customer@example.com',
+      customerEmail: 'repro.customer@capitec.com',
       preferredLanguage: 'en'
     };
     const recoveredBooking: MyBooking = {

@@ -64,7 +64,7 @@ class BookingCommandServiceTest {
       toDateTime(appointmentDate, bookingSlotStartTime),
       toDateTime(appointmentDate, bookingSlotStartTime.plusMinutes(Branch.SLOT_MINUTES)),
       "Tebogo Ndlovu",
-      "tebogo@example.co.za",
+      "tebogo@capitec.co.za",
       "en",
       "idem-123"
     );
@@ -88,7 +88,7 @@ class BookingCommandServiceTest {
       today,
       LocalTime.of(9, 0),
       "BKG-20260420-OLD0001",
-      "tebogo@example.co.za"
+      "tebogo@capitec.co.za"
     ));
 
     BookingCommandService bookingCommandService = bookingCommandService(
@@ -104,7 +104,7 @@ class BookingCommandServiceTest {
       toDateTime(today, LocalTime.of(11, 0)),
       toDateTime(today, LocalTime.of(11, 0).plusMinutes(Branch.SLOT_MINUTES)),
       "Tebogo Ndlovu",
-      "tebogo@example.co.za",
+      "tebogo@capitec.co.za",
       "en",
       "idem-new-slot"
     )).await().indefinitely();
@@ -127,7 +127,7 @@ class BookingCommandServiceTest {
       today,
       LocalTime.of(11, 0),
       "BKG-20260420-FUTURE1",
-      "tebogo@example.co.za"
+      "tebogo@capitec.co.za"
     ));
 
     BookingCommandService bookingCommandService = bookingCommandService(
@@ -143,7 +143,7 @@ class BookingCommandServiceTest {
       toDateTime(today, LocalTime.of(12, 0)),
       toDateTime(today, LocalTime.of(12, 0).plusMinutes(Branch.SLOT_MINUTES)),
       "Tebogo Ndlovu",
-      "tebogo@example.co.za",
+      "tebogo@capitec.co.za",
       "en",
       "idem-blocked-slot"
     )).await().indefinitely())

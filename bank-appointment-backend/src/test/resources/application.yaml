@@ -35,5 +35,5 @@ app:
   email-assets:
     base-url: http://localhost:4200/assets/email
   security:
-    owner-email: owner@example.co.za
+    owner-email: owner@capitec.co.za
     bootstrap-owner: false

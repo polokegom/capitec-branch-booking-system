@@ -46,7 +46,7 @@ class PostgresRepositoryIT {
     LocalDateTime windowStart = toDateTime(appointmentDate, LocalTime.MIDNIGHT);
     LocalDateTime windowEnd = toDateTime(appointmentDate.plusDays(1), LocalTime.MIDNIGHT);
 
-    Booking confirmed = booking("occupancy-" + UUID.randomUUID() + "@example.co.za", appointmentDate, bookingSlotStartTime);
+    Booking confirmed = booking("occupancy-" + UUID.randomUUID() + "@capitec.co.za", appointmentDate, bookingSlotStartTime);
     bookingRepository.save(confirmed).await().indefinitely();
 
     assertThat(bookingRepository.existsConfirmedBookingAt(SANDTON_BRANCH_ID, startDateTime).await().indefinitely()).isTrue();
@@ -62,7 +62,7 @@ class PostgresRepositoryIT {
   @Test
   void shouldFindOnlyCustomerBookingsThatHaveNotStarted() {
     LocalDate currentDate = nextWeekday();
-    String customerEmail = "postgres-it-" + UUID.randomUUID() + "@example.co.za";
+    String customerEmail = "postgres-it-" + UUID.randomUUID() + "@capitec.co.za";
 
     Booking startedBooking = booking(customerEmail, currentDate, LocalTime.of(9, 0));
     Booking upcomingBooking = booking(customerEmail, currentDate, LocalTime.of(11, 0));

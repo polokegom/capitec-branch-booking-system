@@ -40,7 +40,7 @@ describe('AuthService', () => {
   it('stores the authenticated profile after a successful login', async () => {
     const token = createToken({ exp: futureExpiry() });
     const payload: LoginPayload = {
-      email: 'client@example.com',
+      email: 'client@capitec.com',
       password: 'SecurePassword1!'
     };
 
@@ -48,7 +48,7 @@ describe('AuthService', () => {
       token,
       refreshToken: 'refresh-token',
       profile: {
-        email: 'client@example.com',
+        email: 'client@capitec.com',
         firstName: 'Nandi',
         lastName: 'Mokoena',
         roles: ['customer']
@@ -63,7 +63,7 @@ describe('AuthService', () => {
     }));
     expect(service.authenticated()).toBe(true);
     expect(service.displayName()).toBe('Nandi Mokoena');
-    expect(service.email()).toBe('client@example.com');
+    expect(service.email()).toBe('client@capitec.com');
     expect(JSON.parse(sessionStorage.getItem(STORAGE_KEY) ?? '{}')).toMatchObject({
       token,
       refreshToken: 'refresh-token'
@@ -73,7 +73,7 @@ describe('AuthService', () => {
   it('uses the backend message when login fails', async () => {
     fetchMock.mockResolvedValue(jsonResponse({ message: 'Invalid email or password.' }, 401));
 
-    await expect(service.login({ email: 'client@example.com', password: 'wrong' }))
+    await expect(service.login({ email: 'client@capitec.com', password: 'wrong' }))
       .rejects.toThrow('Invalid email or password.');
 
     expect(service.authenticated()).toBe(false);
@@ -82,7 +82,7 @@ describe('AuthService', () => {
 
   it('returns the verification outcome after registration without a token', async () => {
     const payload: RegisterPayload = {
-      email: 'client@example.com',
+      email: 'client@capitec.com',
       firstName: 'Nandi',
       lastName: 'Mokoena',
       password: 'SecurePassword1!'
@@ -103,7 +103,7 @@ describe('AuthService', () => {
   it('clears an expired stored token before returning an access token', async () => {
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
       token: createToken({ exp: pastExpiry() }),
-      profile: { email: 'expired@example.com' }
+      profile: { email: 'expired@capitec.com' }
     }));
 
     await expect(service.getAccessToken()).resolves.toBeNull();

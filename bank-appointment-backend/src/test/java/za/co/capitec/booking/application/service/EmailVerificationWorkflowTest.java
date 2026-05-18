@@ -24,7 +24,7 @@ class EmailVerificationWorkflowTest {
       emailService
     );
 
-    Response response = workflow.createEmailVerification(new CreateEmailVerificationRequest("unknown@example.co.za"));
+    Response response = workflow.createEmailVerification(new CreateEmailVerificationRequest("unknown@capitec.co.za"));
 
     assertThat(response.getStatus()).isEqualTo(Response.Status.ACCEPTED.getStatusCode());
     assertThat(emailService.sentEmailCount).isZero();
@@ -38,7 +38,7 @@ class EmailVerificationWorkflowTest {
       emailService
     );
 
-    Response response = workflow.createEmailVerification(new CreateEmailVerificationRequest("customer@example.co.za"));
+    Response response = workflow.createEmailVerification(new CreateEmailVerificationRequest("customer@capitec.co.za"));
 
     assertThat(response.getStatus()).isEqualTo(Response.Status.ACCEPTED.getStatusCode());
     assertThat(emailService.sentEmailCount).isEqualTo(1);
@@ -55,7 +55,7 @@ class EmailVerificationWorkflowTest {
     Response response = workflow.findEmailVerification("expired-verification-id", "tenant-123");
 
     assertThat(response.getStatus()).isEqualTo(Response.Status.SEE_OTHER.getStatusCode());
-    assertThat(response.getLocation()).isEqualTo(URI.create("https://app.example.co.za/login?emailVerification=expired"));
+    assertThat(response.getLocation()).isEqualTo(URI.create("https://app.capitec.co.za/login?emailVerification=expired"));
   }
 
   @Test
@@ -65,7 +65,7 @@ class EmailVerificationWorkflowTest {
       new CapturingVerificationEmailService()
     );
 
-    assertThatThrownBy(() -> workflow.createEmailVerification(new CreateEmailVerificationRequest("customer@example.co.za")))
+    assertThatThrownBy(() -> workflow.createEmailVerification(new CreateEmailVerificationRequest("customer@capitec.co.za")))
       .isInstanceOf(WebApplicationException.class)
       .satisfies(throwable -> {
         Response response = ((WebApplicationException) throwable).getResponse();
@@ -91,7 +91,7 @@ class EmailVerificationWorkflowTest {
     EmailVerificationWorkflow workflow = new EmailVerificationWorkflow(fusionAuthRestClient, emailService, responseMapper);
     workflow.fusionAuthApiKey = "test-api-key";
     workflow.fusionAuthApplicationId = APPLICATION_ID;
-    workflow.publicBaseUrl = "https://app.example.co.za";
+    workflow.publicBaseUrl = "https://app.capitec.co.za";
     return workflow;
   }
 

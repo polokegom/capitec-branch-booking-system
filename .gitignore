@@ -1,5 +1,6 @@
 **/db/migration/*.sql
 !**/db/migration/*seed*.sql
+!bank-appointment-backend/src/main/resources/db/migration/*.sql
 dns/
 .env
 .env.*

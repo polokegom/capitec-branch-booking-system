@@ -21,7 +21,7 @@ class AuthServiceTest {
       new NotFoundException(Response.status(Response.Status.NOT_FOUND).entity("{}").build())
     ));
 
-    Response response = authService.createSession(new AuthSessionRequest("customer@example.co.za", "wrong-password"));
+    Response response = authService.createSession(new AuthSessionRequest("customer@capitec.co.za", "wrong-password"));
 
     assertThat(response.getStatus()).isEqualTo(Response.Status.UNAUTHORIZED.getStatusCode());
     assertThat(response.getEntity()).isEqualTo(Map.of("message", "Invalid email or password."));
@@ -31,7 +31,7 @@ class AuthServiceTest {
   void shouldMapFusionAuthConnectivityFailuresToBadGateway() {
     AuthService authService = authServiceWith(fusionAuthRestClient(new ProcessingException("Connection refused")));
 
-    assertThatThrownBy(() -> authService.createSession(new AuthSessionRequest("customer@example.co.za", "password123")))
+    assertThatThrownBy(() -> authService.createSession(new AuthSessionRequest("customer@capitec.co.za", "password123")))
       .isInstanceOf(jakarta.ws.rs.WebApplicationException.class)
       .satisfies(throwable -> {
         Response response = ((jakarta.ws.rs.WebApplicationException) throwable).getResponse();
