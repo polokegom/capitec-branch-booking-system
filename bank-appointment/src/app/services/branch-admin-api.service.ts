@@ -34,6 +34,11 @@ export interface AdminBranchPayload {
   adminEmail: string | null;
 }
 
+export interface BranchMarket {
+  timezone: string;
+  provinces: string[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class BranchAdminApiService {
   private readonly http = inject(HttpClient);
@@ -60,8 +65,8 @@ export class BranchAdminApiService {
     return firstValueFrom(this.http.patch<void>(`${ADMIN_BRANCHES_API_URL}/${id}`, { active: true }));
   }
 
-  listCountries(): Promise<Record<string, string[]>> {
-    return firstValueFrom(this.http.get<Record<string, string[]>>(BRANCH_COUNTRIES_API_URL));
+  listCountries(): Promise<Record<string, BranchMarket>> {
+    return firstValueFrom(this.http.get<Record<string, BranchMarket>>(BRANCH_COUNTRIES_API_URL));
   }
 
   listVisibleBranches(startIndex = 0, endIndex = 100): Promise<PaginationResponse<AdminBranch>> {

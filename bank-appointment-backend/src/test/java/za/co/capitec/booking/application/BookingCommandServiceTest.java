@@ -7,6 +7,7 @@ import io.smallrye.mutiny.Uni;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -19,18 +20,15 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import za.co.capitec.booking.application.configuration.EmailDeliveryGuardrails;
-import za.co.capitec.booking.application.configuration.CountriesWithBankBranches;
 import za.co.capitec.booking.application.command.CreateBookingCommand;
 import za.co.capitec.booking.application.port.BookingRepository;
-import za.co.capitec.booking.application.port.BranchCatalog;
-import za.co.capitec.booking.application.port.BookingSlotInventoryRepository;
+import za.co.capitec.booking.application.port.BranchRepository;
 import za.co.capitec.booking.application.service.BookingCommandService;
 import za.co.capitec.booking.application.service.BookingNotificationService;
-import za.co.capitec.booking.application.utility.BookingDateTimes;
 import za.co.capitec.booking.domain.model.Booking;
 import za.co.capitec.booking.domain.model.BookingStatus;
 import za.co.capitec.booking.domain.model.Branch;
-import za.co.capitec.booking.domain.model.BookingSlotAvailability;
+import za.co.capitec.booking.domain.model.Pagination;
 import za.co.capitec.booking.domain.exception.CustomerHasActiveBookingException;
 
 class BookingCommandServiceTest {
@@ -44,13 +42,7 @@ class BookingCommandServiceTest {
     LocalTime bookingSlotStartTime = LocalTime.of(9, 0);
 
     InMemoryBookingRepository bookingRepository = new InMemoryBookingRepository();
-    InMemoryBranchCatalog branchCatalog = new InMemoryBranchCatalog(sandtonCityBranch(branchId));
-    InMemoryBookingSlotInventoryRepository bookingSlotInventoryRepository = new InMemoryBookingSlotInventoryRepository(
-      branchId,
-      appointmentDate,
-      bookingSlotStartTime,
-      LocalTime.of(9, 30)
-    );
+    InMemoryBranchRepository branchRepository = new InMemoryBranchRepository(sandtonCityBranch(branchId));
 
     BookingReferenceGenerator referenceGenerator = new BookingReferenceGenerator() {
       @Override
@@ -61,18 +53,16 @@ class BookingCommandServiceTest {
 
     BookingCommandService bookingCommandService = new BookingCommandService(
       bookingRepository,
-      branchCatalog,
-      bookingSlotInventoryRepository,
+      branchRepository,
       new BookingPolicy(45, FIXED_CLOCK),
       referenceGenerator,
-      new NoOpBookingNotificationService(),
-      new TestCountriesWithBankBranches()
+      new NoOpBookingNotificationService()
     );
 
     CreateBookingCommand command = new CreateBookingCommand(
       branchId,
-      toBranchUtc(appointmentDate, bookingSlotStartTime),
-      toBranchUtc(appointmentDate, LocalTime.of(9, 30)),
+      toDateTime(appointmentDate, bookingSlotStartTime),
+      toDateTime(appointmentDate, bookingSlotStartTime.plusMinutes(Branch.SLOT_MINUTES)),
       "Tebogo Ndlovu",
       "tebogo@example.co.za",
       "en",
@@ -83,7 +73,6 @@ class BookingCommandServiceTest {
     Booking repeatedBooking = bookingCommandService.createBooking(command).await().indefinitely();
 
     assertThat(repeatedBooking).isEqualTo(firstBooking);
-    assertThat(bookingSlotInventoryRepository.reservationCount).isEqualTo(1);
     assertThat(bookingRepository.savedBookings).hasSize(1);
     assertThat(firstBooking.status()).isEqualTo(BookingStatus.CONFIRMED);
   }
@@ -107,14 +96,13 @@ class BookingCommandServiceTest {
       branchId,
       today,
       LocalTime.of(11, 0),
-      LocalTime.of(11, 30),
       "BKG-20260420-NEW0001"
     );
 
     Booking booking = bookingCommandService.createBooking(new CreateBookingCommand(
       branchId,
-      toBranchUtc(today, LocalTime.of(11, 0)),
-      toBranchUtc(today, LocalTime.of(11, 30)),
+      toDateTime(today, LocalTime.of(11, 0)),
+      toDateTime(today, LocalTime.of(11, 0).plusMinutes(Branch.SLOT_MINUTES)),
       "Tebogo Ndlovu",
       "tebogo@example.co.za",
       "en",
@@ -122,10 +110,10 @@ class BookingCommandServiceTest {
     )).await().indefinitely();
 
     assertThat(booking.status()).isEqualTo(BookingStatus.CONFIRMED);
-    assertThat(booking.startDateTime()).isEqualTo(toBranchUtc(today, LocalTime.of(11, 0)));
-    assertThat(booking.endDateTime()).isEqualTo(toBranchUtc(today, LocalTime.of(11, 30)));
-    assertThat(BookingDateTimes.toBookingDate(booking.startDateTime(), BRANCH_ZONE)).isEqualTo(today);
-    assertThat(BookingDateTimes.toBookingTime(booking.startDateTime(), BRANCH_ZONE)).isEqualTo(LocalTime.of(11, 0));
+    assertThat(booking.startDateTime()).isEqualTo(toDateTime(today, LocalTime.of(11, 0)));
+    assertThat(booking.endDateTime()).isEqualTo(toDateTime(today, LocalTime.of(11, 0).plusMinutes(Branch.SLOT_MINUTES)));
+    assertThat(booking.startDateTime().toLocalDate()).isEqualTo(today);
+    assertThat(booking.startDateTime().toLocalTime()).isEqualTo(LocalTime.of(11, 0));
   }
 
   @Test
@@ -147,14 +135,13 @@ class BookingCommandServiceTest {
       branchId,
       today,
       LocalTime.of(12, 0),
-      LocalTime.of(12, 30),
       "BKG-20260420-NEW0002"
     );
 
     assertThatThrownBy(() -> bookingCommandService.createBooking(new CreateBookingCommand(
       branchId,
-      toBranchUtc(today, LocalTime.of(12, 0)),
-      toBranchUtc(today, LocalTime.of(12, 30)),
+      toDateTime(today, LocalTime.of(12, 0)),
+      toDateTime(today, LocalTime.of(12, 0).plusMinutes(Branch.SLOT_MINUTES)),
       "Tebogo Ndlovu",
       "tebogo@example.co.za",
       "en",
@@ -169,17 +156,14 @@ class BookingCommandServiceTest {
     UUID branchId,
     LocalDate appointmentDate,
     LocalTime bookingSlotStartTime,
-    LocalTime bookingSlotEndTime,
     String bookingReference
   ) {
     return new BookingCommandService(
       bookingRepository,
-      new InMemoryBranchCatalog(sandtonCityBranch(branchId)),
-      new InMemoryBookingSlotInventoryRepository(branchId, appointmentDate, bookingSlotStartTime, bookingSlotEndTime),
+      new InMemoryBranchRepository(sandtonCityBranch(branchId)),
       new BookingPolicy(45, FIXED_CLOCK),
       () -> bookingReference,
-      new NoOpBookingNotificationService(),
-      new TestCountriesWithBankBranches()
+      new NoOpBookingNotificationService()
     );
   }
 
@@ -195,26 +179,31 @@ class BookingCommandServiceTest {
       .bookingReference(bookingReference)
       .idempotencyKey("seed-" + bookingReference)
       .branchId(branchId)
-      .startDateTime(toBranchUtc(appointmentDate, bookingSlotStartTime))
-      .endDateTime(toBranchUtc(appointmentDate, bookingSlotStartTime.plusMinutes(30)))
+      .startDateTime(toDateTime(appointmentDate, bookingSlotStartTime))
+      .endDateTime(toDateTime(appointmentDate, bookingSlotStartTime.plusMinutes(Branch.SLOT_MINUTES)))
       .customerName("Tebogo Ndlovu")
       .customerEmail(customerEmail)
       .preferredLanguage("en")
       .status(BookingStatus.CONFIRMED)
-      .createdAt(java.time.OffsetDateTime.now())
+      .createdAt(OffsetDateTime.now())
       .build();
   }
 
-  private static final class InMemoryBranchCatalog implements BranchCatalog {
+  private static final class InMemoryBranchRepository implements BranchRepository {
     private final Branch branch;
 
-    private InMemoryBranchCatalog(Branch branch) {
+    private InMemoryBranchRepository(Branch branch) {
       this.branch = branch;
     }
 
     @Override
     public Uni<List<Branch>> search(String query, int limit) {
       return Uni.createFrom().item(List.of(branch));
+    }
+
+    @Override
+    public Uni<Pagination<Branch>> searchUsingPagination(String query, int startIndex, int endIndex) {
+      return Uni.createFrom().item(new Pagination<>(List.of(branch), 1, startIndex, endIndex));
     }
 
     @Override
@@ -238,50 +227,8 @@ class BookingCommandServiceTest {
       .build();
   }
 
-  private static java.time.OffsetDateTime toBranchUtc(LocalDate appointmentDate, LocalTime bookingSlotTime) {
-    return BookingDateTimes.toUtc(appointmentDate, bookingSlotTime, BRANCH_ZONE);
-  }
-
-  private static final class InMemoryBookingSlotInventoryRepository implements BookingSlotInventoryRepository {
-    private final BookingSlotAvailability bookingSlotAvailability;
-    private int reservationCount;
-
-    private InMemoryBookingSlotInventoryRepository(UUID branchId, LocalDate appointmentDate, LocalTime bookingSlotStartTime, LocalTime bookingSlotEndTime) {
-      this.bookingSlotAvailability = new BookingSlotAvailability(branchId, appointmentDate, bookingSlotStartTime, bookingSlotEndTime, 12, 0);
-    }
-
-    @Override
-    public Uni<Void> ensureInventory(UUID branchId, LocalDate appointmentDate) {
-      return Uni.createFrom().voidItem();
-    }
-
-    @Override
-    public Uni<List<BookingSlotAvailability>> findAvailability(UUID branchId, LocalDate appointmentDate) {
-      return Uni.createFrom().item(List.of(bookingSlotAvailability));
-    }
-
-    @Override
-    public Uni<Optional<BookingSlotAvailability>> findBookingSlot(UUID branchId, LocalDate appointmentDate, LocalTime bookingSlotStartTime) {
-      return Uni.createFrom().item(Optional.of(bookingSlotAvailability));
-    }
-
-    @Override
-    public Uni<Boolean> reserveBookingSlot(UUID branchId, LocalDate appointmentDate, LocalTime bookingSlotStartTime) {
-      if (reservationCount >= bookingSlotAvailability.capacity()) {
-        return Uni.createFrom().item(false);
-      }
-      reservationCount++;
-      return Uni.createFrom().item(true);
-    }
-
-    @Override
-    public Uni<Boolean> releaseBookingSlot(UUID branchId, LocalDate appointmentDate, LocalTime bookingSlotStartTime) {
-      if (reservationCount <= 0) {
-        return Uni.createFrom().item(false);
-      }
-      reservationCount--;
-      return Uni.createFrom().item(true);
-    }
+  private static LocalDateTime toDateTime(LocalDate appointmentDate, LocalTime bookingSlotTime) {
+    return LocalDateTime.of(appointmentDate, bookingSlotTime);
   }
 
   private static final class InMemoryBookingRepository implements BookingRepository {
@@ -300,11 +247,11 @@ class BookingCommandServiceTest {
     }
 
     @Override
-    public Uni<Optional<Booking>> findUpcomingByCustomerEmail(String customerEmail, OffsetDateTime currentDateTime) {
+    public Uni<Optional<Booking>> findUpcomingByCustomerEmail(String customerEmail, LocalDateTime currentDateTime) {
       return Uni.createFrom().item(savedBookings.values().stream()
         .filter(booking -> booking.customerEmail() != null
           && booking.customerEmail().equalsIgnoreCase(customerEmail))
-        .filter(booking -> booking.startDateTime().toInstant().isAfter(currentDateTime.toInstant()))
+        .filter(booking -> booking.startDateTime().isAfter(currentDateTime))
         .filter(booking -> booking.status() == za.co.capitec.booking.domain.model.BookingStatus.CONFIRMED)
         .sorted(Comparator.comparing(Booking::startDateTime))
         .findFirst());
@@ -325,8 +272,8 @@ class BookingCommandServiceTest {
     @Override
     public Uni<List<Booking>> findForAdmin(
       Collection<UUID> branchIds,
-      OffsetDateTime startDateTime,
-      OffsetDateTime endDateTime
+      LocalDateTime startDateTime,
+      LocalDateTime endDateTime
     ) {
       return Uni.createFrom().item(List.of());
     }
@@ -346,44 +293,41 @@ class BookingCommandServiceTest {
       savedBookings.put(booking.id(), booking);
       return Uni.createFrom().item(booking);
     }
+
+    @Override
+    public Uni<List<LocalDateTime>> findConfirmedStartDateTimes(
+      UUID branchId,
+      LocalDateTime startInclusive,
+      LocalDateTime endExclusive
+    ) {
+      return Uni.createFrom().item(savedBookings.values().stream()
+        .filter(booking -> booking.branchId().equals(branchId))
+        .filter(booking -> booking.status() == BookingStatus.CONFIRMED)
+        .filter(booking -> !booking.startDateTime().isBefore(startInclusive))
+        .filter(booking -> booking.startDateTime().isBefore(endExclusive))
+        .map(Booking::startDateTime)
+        .toList());
+    }
+
+    @Override
+    public Uni<Boolean> existsConfirmedBookingAt(UUID branchId, LocalDateTime startDateTime) {
+      return Uni.createFrom().item(savedBookings.values().stream()
+        .filter(booking -> booking.branchId().equals(branchId))
+        .filter(booking -> booking.status() == BookingStatus.CONFIRMED)
+        .anyMatch(booking -> booking.startDateTime().equals(startDateTime)));
+    }
   }
 
   private static final class NoOpBookingNotificationService extends BookingNotificationService {
     private NoOpBookingNotificationService() {
-      super(null, new EmailDeliveryGuardrails(), new TestCountriesWithBankBranches());
+      super(null, new EmailDeliveryGuardrails());
     }
 
-    @Override
-    public void sendConfirmationEmail(Booking booking) {
-    }
 
     @Override
     public void sendConfirmationEmail(Booking booking, Branch branch) {
     }
 
-    @Override
-    public void sendDayOfReminderEmail(Booking booking) {
-    }
 
-    @Override
-    public void sendDayOfReminderEmail(Booking booking, Branch branch) {
-    }
-  }
-
-  private static final class TestCountriesWithBankBranches implements CountriesWithBankBranches {
-    @Override
-    public Map<String, Market> markets() {
-      return Map.of("South Africa", new Market() {
-        @Override
-        public String timezone() {
-          return BRANCH_ZONE.getId();
-        }
-
-        @Override
-        public List<String> provinces() {
-          return List.of("Gauteng");
-        }
-      });
-    }
   }
 }

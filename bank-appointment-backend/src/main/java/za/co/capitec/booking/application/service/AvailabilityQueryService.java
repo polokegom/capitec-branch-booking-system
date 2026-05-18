@@ -3,49 +3,61 @@ package za.co.capitec.booking.application.service;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.time.LocalDate;
-import java.time.ZoneId;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import za.co.capitec.booking.application.BookingPolicy;
-import za.co.capitec.booking.application.configuration.CountriesWithBankBranches;
-import za.co.capitec.booking.application.port.BranchCatalog;
-import za.co.capitec.booking.application.port.BookingSlotInventoryRepository;
+import za.co.capitec.booking.application.port.BookingRepository;
+import za.co.capitec.booking.application.port.BranchRepository;
+import za.co.capitec.booking.application.utility.BookingDateTimes;
 import za.co.capitec.booking.domain.exception.BranchNotFoundException;
 import za.co.capitec.booking.domain.exception.InvalidBookingRequestException;
 import za.co.capitec.booking.domain.model.BookingSlotAvailability;
+import za.co.capitec.booking.domain.model.Branch;
 
 @ApplicationScoped
 @RequiredArgsConstructor
 public class AvailabilityQueryService {
-  private final BranchCatalog branchCatalog;
-  private final BookingSlotInventoryRepository bookingSlotInventoryRepository;
+  private final BranchRepository branchRepository;
+  private final BookingRepository bookingRepository;
   private final BookingPolicy bookingPolicy;
-  private final CountriesWithBankBranches countriesWithBankBranches;
 
-  public Uni<BookingSlotAvailabilityResult> findAvailability(UUID branchId, LocalDate appointmentDate) {
+  public Uni<List<BookingSlotAvailability>> findAvailability(UUID branchId, LocalDate appointmentDate) {
+    // perform Business validations
     if (branchId == null) {
       throw new InvalidBookingRequestException("Branch id is required.");
     }
+    bookingPolicy.validateAvailabilityDate(appointmentDate);
 
-    return branchCatalog.findById(branchId)
+    // Implement business logic
+    return branchRepository.findById(branchId)
       .map(branch -> branch.orElseThrow(() -> new BranchNotFoundException(branchId)))
       .chain(branch -> {
-        ZoneId branchZone = countriesWithBankBranches.zoneIdFor(branch.country());
-        bookingPolicy.validateAvailabilityDate(appointmentDate, branchZone);
-        return bookingSlotInventoryRepository.ensureInventory(branchId, appointmentDate)
-          .chain(() -> bookingSlotInventoryRepository.findAvailability(branchId, appointmentDate))
-          .map(bookingSlots -> bookingSlots.stream()
-            .filter(bookingSlot -> !bookingPolicy.isBookingSlotInPast(
-              appointmentDate,
-              bookingSlot.bookingSlotStartTime(),
-              branchZone
-            ))
-            .toList())
-          .map(bookingSlots -> new BookingSlotAvailabilityResult(branchZone, bookingSlots));
+        return findBookedStartTimes(branch, appointmentDate)
+          .map(bookedStartTimes -> availableSlots(branch, appointmentDate, bookedStartTimes));
       });
   }
 
-  public record BookingSlotAvailabilityResult(ZoneId branchZone, List<BookingSlotAvailability> bookingSlots) {
+  private Uni<Set<LocalTime>> findBookedStartTimes(Branch branch, LocalDate appointmentDate) {
+    LocalDateTime startInclusive = BookingDateTimes.toDateTime(appointmentDate, LocalTime.MIDNIGHT);
+    LocalDateTime endExclusive = BookingDateTimes.toDateTime(appointmentDate.plusDays(1), LocalTime.MIDNIGHT);
+    return bookingRepository.findConfirmedStartDateTimes(branch.id(), startInclusive, endExclusive)
+      .map(times -> times.stream().map(BookingDateTimes::toBookingTime).collect(Collectors.toSet()));
   }
+
+  private List<BookingSlotAvailability> availableSlots(
+    Branch branch,
+    LocalDate appointmentDate,
+    Set<LocalTime> alreadyBookedStartTimes
+  ) {
+    return branch.bookingSlots(appointmentDate).stream()
+      .filter(slot -> !bookingPolicy.isBookingSlotInPast(appointmentDate, slot.bookingSlotStartTime(), branch.country()))
+      .filter(slot -> !alreadyBookedStartTimes.contains(slot.bookingSlotStartTime()))
+      .toList();
+  }
+
 }

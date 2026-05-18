@@ -6,6 +6,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
@@ -32,11 +33,11 @@ public class BookingEntity {
   @Column(name = "branch_id", nullable = false)
   public UUID branchId;
 
-  @Column(name = "start_datetime", nullable = false, columnDefinition = "timestamp with time zone")
-  public OffsetDateTime startDateTime;
+  @Column(name = "start_datetime", nullable = false, columnDefinition = "timestamp")
+  public LocalDateTime startDateTime;
 
-  @Column(name = "end_datetime", nullable = false, columnDefinition = "timestamp with time zone")
-  public OffsetDateTime endDateTime;
+  @Column(name = "end_datetime", nullable = false, columnDefinition = "timestamp")
+  public LocalDateTime endDateTime;
 
   @Column(name = "customer_name", nullable = false, length = 160)
   public String customerName;

@@ -51,17 +51,8 @@ public class VerificationEmailService {
     String displayName = firstName == null || firstName.isBlank() ? "there" : firstName.trim();
     String verificationUrl = verificationUrl(verificationId);
     String html = renderHtml(displayName, verificationId, verificationUrl);
-    String text = """
-      Hello %s,
 
-      Please verify your email address before signing in to the booking system.
-
-      %s
-
-      If you did not create this account, you can ignore this email.
-      """.formatted(displayName, verificationUrl);
-
-    Mail mail = deliveryGuardrails.apply(Mail.withHtml(email, "Verify your booking email address", html).setText(text));
+    Mail mail = deliveryGuardrails.apply(Mail.withHtml(email, "Verify your booking email address", html));
     mailer.send(mail);
     log.info("Sent verification email to {}", email);
   }

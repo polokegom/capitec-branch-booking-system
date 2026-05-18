@@ -39,11 +39,6 @@ public class AuthController {
     return ReactiveResourceSupport.fromWorker(() -> authService.createUser(request));
   }
 
-  @POST
-  @Path("/register")
-  public Uni<Response> createUserFromRegistrationRoute(@NotNull @Valid CreateAuthUserRequest request) {
-    return createUser(request);
-  }
 
   @POST
   @Path("/email-verifications")

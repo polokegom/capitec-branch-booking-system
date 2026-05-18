@@ -6,38 +6,32 @@ import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import za.co.capitec.booking.application.port.BookingRepository;
-import za.co.capitec.booking.application.port.BranchCatalog;
-import za.co.capitec.booking.application.port.BookingSlotInventoryRepository;
-import za.co.capitec.booking.application.utility.BookingDateTimes;
+import za.co.capitec.booking.application.port.BranchRepository;
 import za.co.capitec.booking.domain.model.Booking;
 import za.co.capitec.booking.domain.model.BookingStatus;
-import za.co.capitec.booking.domain.model.BookingSlotAvailability;
+import za.co.capitec.booking.domain.model.Branch;
 
 @QuarkusTest
 class PostgresRepositoryIT {
   private static final UUID SANDTON_BRANCH_ID = UUID.fromString("0d0fb1e2-3d44-4a66-9f4b-0d745e9f1a03");
-  private static final ZoneId SANDTON_ZONE = ZoneId.of("Africa/Johannesburg");
 
   @Inject
-  BranchCatalog branchCatalog;
-
-  @Inject
-  BookingSlotInventoryRepository bookingSlotInventoryRepository;
+  BranchRepository branchRepository;
 
   @Inject
   BookingRepository bookingRepository;
 
   @Test
   void shouldLoadSeededBranchesFromPostgres() {
-    var branches = branchCatalog.search("Sandton", 10).await().indefinitely();
+    var branches = branchRepository.search("Sandton", 10).await().indefinitely();
 
     assertThat(branches)
       .extracting(branch -> branch.code())
@@ -45,27 +39,24 @@ class PostgresRepositoryIT {
   }
 
   @Test
-  void shouldMaterializeReserveAndReleaseBookingSlotInventoryInPostgres() {
+  void shouldTrackConfirmedBookingOccupancyAndFreeSlotOnCancellation() {
     LocalDate appointmentDate = nextWeekday();
-    LocalTime bookingSlotStartTime = LocalTime.of(9, 0);
+    LocalTime bookingSlotStartTime = LocalTime.of(14, 30);
+    LocalDateTime startDateTime = toDateTime(appointmentDate, bookingSlotStartTime);
+    LocalDateTime windowStart = toDateTime(appointmentDate, LocalTime.MIDNIGHT);
+    LocalDateTime windowEnd = toDateTime(appointmentDate.plusDays(1), LocalTime.MIDNIGHT);
 
-    bookingSlotInventoryRepository.ensureInventory(SANDTON_BRANCH_ID, appointmentDate).await().indefinitely();
+    Booking confirmed = booking("occupancy-" + UUID.randomUUID() + "@example.co.za", appointmentDate, bookingSlotStartTime);
+    bookingRepository.save(confirmed).await().indefinitely();
 
-    assertThat(bookingSlotInventoryRepository.findAvailability(SANDTON_BRANCH_ID, appointmentDate).await().indefinitely())
-      .extracting(BookingSlotAvailability::bookingSlotStartTime)
-      .contains(bookingSlotStartTime);
+    assertThat(bookingRepository.existsConfirmedBookingAt(SANDTON_BRANCH_ID, startDateTime).await().indefinitely()).isTrue();
+    assertThat(bookingRepository.findConfirmedStartDateTimes(SANDTON_BRANCH_ID, windowStart, windowEnd).await().indefinitely())
+      .contains(startDateTime);
 
-    assertThat(bookingSlotInventoryRepository.reserveBookingSlot(SANDTON_BRANCH_ID, appointmentDate, bookingSlotStartTime).await().indefinitely()).isTrue();
-    assertThat(bookingSlotInventoryRepository.reserveBookingSlot(SANDTON_BRANCH_ID, appointmentDate, bookingSlotStartTime).await().indefinitely()).isFalse();
-    assertThat(bookingSlotInventoryRepository.findAvailability(SANDTON_BRANCH_ID, appointmentDate).await().indefinitely())
-      .extracting(BookingSlotAvailability::bookingSlotStartTime)
-      .doesNotContain(bookingSlotStartTime);
+    Booking cancelled = confirmed.toBuilder().status(BookingStatus.CANCELLED).build();
+    bookingRepository.update(cancelled).await().indefinitely();
 
-    assertThat(bookingSlotInventoryRepository.releaseBookingSlot(SANDTON_BRANCH_ID, appointmentDate, bookingSlotStartTime).await().indefinitely()).isTrue();
-    assertThat(bookingSlotInventoryRepository.releaseBookingSlot(SANDTON_BRANCH_ID, appointmentDate, bookingSlotStartTime).await().indefinitely()).isFalse();
-    assertThat(bookingSlotInventoryRepository.findAvailability(SANDTON_BRANCH_ID, appointmentDate).await().indefinitely())
-      .extracting(BookingSlotAvailability::bookingSlotStartTime)
-      .contains(bookingSlotStartTime);
+    assertThat(bookingRepository.existsConfirmedBookingAt(SANDTON_BRANCH_ID, startDateTime).await().indefinitely()).isFalse();
   }
 
   @Test
@@ -80,14 +71,14 @@ class PostgresRepositoryIT {
     bookingRepository.save(upcomingBooking).await().indefinitely();
 
     Optional<Booking> nextBooking = bookingRepository
-      .findUpcomingByCustomerEmail(customerEmail, toSandtonUtc(currentDate, LocalTime.of(10, 0)))
+      .findUpcomingByCustomerEmail(customerEmail, toDateTime(currentDate, LocalTime.of(10, 0)))
       .await()
       .indefinitely();
 
     assertThat(nextBooking).hasValueSatisfying(booking ->
       assertThat(booking.bookingReference()).isEqualTo(upcomingBooking.bookingReference()));
 
-    assertThat(bookingRepository.findUpcomingByCustomerEmail(customerEmail, toSandtonUtc(currentDate, LocalTime.of(12, 0))).await().indefinitely())
+    assertThat(bookingRepository.findUpcomingByCustomerEmail(customerEmail, toDateTime(currentDate, LocalTime.of(12, 0))).await().indefinitely())
       .isEmpty();
   }
 
@@ -98,8 +89,8 @@ class PostgresRepositoryIT {
       .bookingReference("BKG-" + uniqueToken)
       .idempotencyKey("idem-" + uniqueToken)
       .branchId(SANDTON_BRANCH_ID)
-      .startDateTime(toSandtonUtc(appointmentDate, bookingSlotStartTime))
-      .endDateTime(toSandtonUtc(appointmentDate, bookingSlotStartTime.plusMinutes(30)))
+      .startDateTime(toDateTime(appointmentDate, bookingSlotStartTime))
+      .endDateTime(toDateTime(appointmentDate, bookingSlotStartTime.plusMinutes(Branch.SLOT_MINUTES)))
       .customerName("Postgres Integration")
       .customerEmail(customerEmail)
       .preferredLanguage("en")
@@ -116,7 +107,7 @@ class PostgresRepositoryIT {
     return date;
   }
 
-  private static OffsetDateTime toSandtonUtc(LocalDate appointmentDate, LocalTime bookingSlotTime) {
-    return BookingDateTimes.toUtc(appointmentDate, bookingSlotTime, SANDTON_ZONE);
+  private static LocalDateTime toDateTime(LocalDate appointmentDate, LocalTime bookingSlotTime) {
+    return LocalDateTime.of(appointmentDate, bookingSlotTime);
   }
 }

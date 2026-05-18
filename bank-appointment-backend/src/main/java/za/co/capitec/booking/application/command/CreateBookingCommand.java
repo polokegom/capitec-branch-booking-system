@@ -1,12 +1,12 @@
 package za.co.capitec.booking.application.command;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 public record CreateBookingCommand(
   UUID branchId,
-  OffsetDateTime startDateTime,
-  OffsetDateTime endDateTime,
+  LocalDateTime startDateTime,
+  LocalDateTime endDateTime,
   String customerName,
   String customerEmail,
   String preferredLanguage,

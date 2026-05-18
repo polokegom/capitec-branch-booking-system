@@ -9,7 +9,7 @@ import { buildGroupedHalfHourTimeSlots, toApiTime, toHourMinuteTime, TimeSlotGro
 import { createPaginationState } from '../../utility/pagination-state.utils';
 import { searchTokens, trimToNull } from '../../utility/text.utils';
 import { AuthService } from '../../services/auth.service';
-import { AdminBranch, AdminBranchPayload, BranchAdminApiService } from '../../services/branch-admin-api.service';
+import { AdminBranch, AdminBranchPayload, BranchAdminApiService, BranchMarket } from '../../services/branch-admin-api.service';
 
 @Component({
   selector: 'app-admin-branches-page',
@@ -135,10 +135,13 @@ export class AdminBranchesPageComponent implements OnInit, OnDestroy {
 
   private async loadCountries(): Promise<void> {
     try {
-      const provincesByCountry = await this.branchAdminApiService.listCountries();
-      if (provincesByCountry && typeof provincesByCountry === 'object') {
+      const markets = await this.branchAdminApiService.listCountries();
+      if (markets && typeof markets === 'object') {
+        const provincesByCountry = Object.fromEntries(
+          Object.entries(markets).map(([country, market]: [string, BranchMarket]) => [country, market.provinces])
+        );
         this.provincesByCountry.set(provincesByCountry);
-        const countryList = Object.keys(provincesByCountry).sort((left, right) => left.localeCompare(right));
+        const countryList = Object.keys(markets).sort((left, right) => left.localeCompare(right));
         if (countryList.length > 0) {
           this.countries.set(countryList);
         }

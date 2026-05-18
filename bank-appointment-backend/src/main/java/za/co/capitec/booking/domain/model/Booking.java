@@ -1,5 +1,6 @@
 package za.co.capitec.booking.domain.model;
 
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 import lombok.Builder;
@@ -10,8 +11,8 @@ public record Booking(
   String bookingReference,
   String idempotencyKey,
   UUID branchId,
-  OffsetDateTime startDateTime,
-  OffsetDateTime endDateTime,
+  LocalDateTime startDateTime,
+  LocalDateTime endDateTime,
   String customerName,
   String customerEmail,
   String preferredLanguage,

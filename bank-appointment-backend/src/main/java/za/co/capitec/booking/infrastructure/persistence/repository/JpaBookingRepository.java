@@ -2,7 +2,7 @@ package za.co.capitec.booking.infrastructure.persistence.repository;
 
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -10,7 +10,6 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.reactive.mutiny.Mutiny;
 import za.co.capitec.booking.application.port.BookingRepository;
-import za.co.capitec.booking.application.utility.BookingDateTimes;
 import za.co.capitec.booking.domain.exception.BookingReferenceCollisionException;
 import za.co.capitec.booking.domain.exception.DuplicateBookingRequestException;
 import za.co.capitec.booking.domain.model.Booking;
@@ -18,7 +17,6 @@ import za.co.capitec.booking.domain.model.BookingStatus;
 import za.co.capitec.booking.domain.model.Pagination;
 import za.co.capitec.booking.domain.model.PaginationWindow;
 import za.co.capitec.booking.infrastructure.persistence.entity.BookingEntity;
-import za.co.capitec.booking.infrastructure.persistence.entity.BookingLookupEntity;
 import za.co.capitec.booking.infrastructure.persistence.mapper.PersistenceMapper;
 import za.co.capitec.booking.infrastructure.persistence.utility.SearchTerm;
 
@@ -30,42 +28,41 @@ public class JpaBookingRepository implements BookingRepository {
 
   @Override
   public Uni<Optional<Booking>> findByIdempotencyKey(String idempotencyKey) {
-    return sessionFactory.withSession(session -> session.createQuery(
-        "from BookingLookupEntity lookup where lookup.idempotencyKey = :idempotencyKey",
-        BookingLookupEntity.class
+    return sessionFactory.withSession(session -> session.createNativeQuery(
+        "select * from booking.booking entity where entity.idempotency_key = :idempotencyKey",
+        BookingEntity.class
       )
       .setParameter("idempotencyKey", idempotencyKey)
       .setMaxResults(1)
       .getResultList()
-      .chain(lookups -> {
-        if (lookups.isEmpty()) {
-          return Uni.createFrom().item(Optional.empty());
-        }
-        return findBookingFromLookup(session, lookups.get(0));
-      }));
+      .map(this::firstBooking));
   }
 
   @Override
   public Uni<Optional<Booking>> findByReference(String bookingReference) {
-    return sessionFactory.withSession(session -> session.find(BookingLookupEntity.class, bookingReference)
-      .chain(lookupEntity -> lookupEntity == null
-        ? Uni.createFrom().item(Optional.empty())
-        : findBookingFromLookup(session, lookupEntity)));
+    return sessionFactory.withSession(session -> session.createNativeQuery(
+        "select * from booking.booking entity where entity.booking_reference = :bookingReference",
+        BookingEntity.class
+      )
+      .setParameter("bookingReference", bookingReference)
+      .setMaxResults(1)
+      .getResultList()
+      .map(this::firstBooking));
   }
 
   @Override
-  public Uni<Optional<Booking>> findUpcomingByCustomerEmail(String customerEmail, OffsetDateTime currentDateTime) {
-    return sessionFactory.withSession(session -> session.createQuery(
-        "from BookingEntity entity " +
-          "where lower(entity.customerEmail) = lower(:customerEmail) " +
-          "and entity.startDateTime > :currentDateTime " +
+  public Uni<Optional<Booking>> findUpcomingByCustomerEmail(String customerEmail, LocalDateTime currentDateTime) {
+    return sessionFactory.withSession(session -> session.createNativeQuery(
+        "select * from booking.booking entity " +
+          "where lower(entity.customer_email) = lower(:customerEmail) " +
+          "and entity.start_datetime > :currentDateTime " +
           "and entity.status = :status " +
-          "order by entity.startDateTime asc",
+          "order by entity.start_datetime asc",
         BookingEntity.class
       )
       .setParameter("customerEmail", customerEmail)
-      .setParameter("currentDateTime", BookingDateTimes.toUtc(currentDateTime))
-      .setParameter("status", BookingStatus.CONFIRMED)
+      .setParameter("currentDateTime", currentDateTime)
+      .setParameter("status", BookingStatus.CONFIRMED.name())
       .setMaxResults(1)
       .getResultList()
       .map(this::firstBooking));
@@ -74,23 +71,23 @@ public class JpaBookingRepository implements BookingRepository {
   @Override
   public Uni<List<Booking>> findForAdmin(
     Collection<UUID> branchIds,
-    OffsetDateTime startDateTime,
-    OffsetDateTime endDateTime
+    LocalDateTime startDateTime,
+    LocalDateTime endDateTime
   ) {
     if (branchIds == null || branchIds.isEmpty()) {
       return Uni.createFrom().item(List.of());
     }
     BookingDateTimeFilter filter = BookingDateTimeFilter.from(startDateTime, endDateTime);
-    return sessionFactory.withSession(session -> filter.bind(session.createQuery(
-          "from BookingEntity entity " +
-            "where entity.branchId in :branchIds " +
+    return sessionFactory.withSession(session -> filter.bind(session.createNativeQuery(
+          "select * from booking.booking entity " +
+            "where entity.branch_id in (:branchIds) " +
             "and entity.status = :status " +
             filter.whereClause() +
-            "order by entity.startDateTime asc, entity.customerName asc",
+            "order by entity.start_datetime asc, entity.customer_name asc",
           BookingEntity.class
         )
         .setParameter("branchIds", branchIds)
-        .setParameter("status", BookingStatus.CONFIRMED))
+        .setParameter("status", BookingStatus.CONFIRMED.name()))
       .getResultList()
       .map(persistenceMapper::toBookings));
   }
@@ -98,8 +95,8 @@ public class JpaBookingRepository implements BookingRepository {
   @Override
   public Uni<Pagination<Booking>> findForAdminUsingPagination(
     Collection<UUID> branchIds,
-    OffsetDateTime startDateTime,
-    OffsetDateTime endDateTime,
+    LocalDateTime startDateTime,
+    LocalDateTime endDateTime,
     int startIndex,
     int endIndex
   ) {
@@ -114,16 +111,16 @@ public class JpaBookingRepository implements BookingRepository {
         if (total == 0L || paginationWindow.isEmpty()) {
           return Uni.createFrom().item(paginationWindow.empty(total));
         }
-        return filter.bind(session.createQuery(
-            "from BookingEntity entity " +
-              "where entity.branchId in :branchIds " +
+        return filter.bind(session.createNativeQuery(
+            "select * from booking.booking entity " +
+              "where entity.branch_id in (:branchIds) " +
               "and entity.status = :status " +
               filter.whereClause() +
-              "order by entity.startDateTime asc, entity.customerName asc",
+              "order by entity.start_datetime asc, entity.customer_name asc",
             BookingEntity.class
           )
           .setParameter("branchIds", branchIds)
-          .setParameter("status", BookingStatus.CONFIRMED))
+          .setParameter("status", BookingStatus.CONFIRMED.name()))
           .setFirstResult(paginationWindow.startIndex())
           .setMaxResults(paginationWindow.requestedItemCount())
           .getResultList()
@@ -135,10 +132,8 @@ public class JpaBookingRepository implements BookingRepository {
   @Override
   public Uni<Booking> save(Booking booking) {
     BookingEntity bookingEntity = persistenceMapper.toEntity(booking);
-    BookingLookupEntity lookupEntity = persistenceMapper.toLookupEntity(booking);
     return sessionFactory.withTransaction((session, transaction) -> session
         .persist(bookingEntity)
-        .chain(() -> session.persist(lookupEntity))
         .call(session::flush)
         .replaceWith(booking))
       .onFailure()
@@ -150,10 +145,10 @@ public class JpaBookingRepository implements BookingRepository {
     if (customerEmail == null || customerEmail.isBlank()) {
       return Uni.createFrom().item(List.of());
     }
-    return sessionFactory.withSession(session -> session.createQuery(
-        "from BookingEntity entity " +
-          "where lower(entity.customerEmail) = lower(:customerEmail) " +
-          "order by entity.startDateTime desc",
+    return sessionFactory.withSession(session -> session.createNativeQuery(
+        "select * from booking.booking entity " +
+          "where lower(entity.customer_email) = lower(:customerEmail) " +
+          "order by entity.start_datetime desc",
         BookingEntity.class
       )
       .setParameter("customerEmail", customerEmail)
@@ -164,8 +159,8 @@ public class JpaBookingRepository implements BookingRepository {
   @Override
   public Uni<Pagination<Booking>> findByCustomerEmailUsingPagination(
     String customerEmail,
-    OffsetDateTime startDateTime,
-    OffsetDateTime endDateTime,
+    LocalDateTime startDateTime,
+    LocalDateTime endDateTime,
     String branchSearch,
     int startIndex,
     int endIndex
@@ -181,9 +176,9 @@ public class JpaBookingRepository implements BookingRepository {
         if (total == 0L || paginationWindow.isEmpty()) {
           return Uni.createFrom().item(paginationWindow.empty(total));
         }
-        return filter.bind(session.createQuery(
-            "from BookingEntity entity " + filter.whereClause() +
-              " order by entity.startDateTime desc",
+        return filter.bind(session.createNativeQuery(
+            "select * from booking.booking entity " + filter.whereClause() +
+              " order by entity.start_datetime desc",
             BookingEntity.class
           ))
           .setFirstResult(paginationWindow.startIndex())
@@ -207,32 +202,65 @@ public class JpaBookingRepository implements BookingRepository {
       }));
   }
 
+  @Override
+  public Uni<List<LocalDateTime>> findConfirmedStartDateTimes(
+    UUID branchId,
+    LocalDateTime startInclusive,
+    LocalDateTime endExclusive
+  ) {
+    return sessionFactory.withSession(session -> session.createNativeQuery(
+        "select * from booking.booking entity " +
+          "where entity.branch_id = :branchId " +
+          "and entity.status = :status " +
+          "and entity.start_datetime >= :startInclusive " +
+          "and entity.start_datetime < :endExclusive",
+        BookingEntity.class
+      )
+      .setParameter("branchId", branchId)
+      .setParameter("status", BookingStatus.CONFIRMED.name())
+      .setParameter("startInclusive", startInclusive)
+      .setParameter("endExclusive", endExclusive)
+      .getResultList()
+      .map(entities -> entities.stream().map(entity -> entity.startDateTime).toList()));
+  }
+
+  @Override
+  public Uni<Boolean> existsConfirmedBookingAt(UUID branchId, LocalDateTime startDateTime) {
+    return sessionFactory.withSession(session -> session.createNativeQuery(
+        "select count(*) from booking.booking entity " +
+          "where entity.branch_id = :branchId " +
+          "and entity.status = :status " +
+          "and entity.start_datetime = :startDateTime",
+        Long.class
+      )
+      .setParameter("branchId", branchId)
+      .setParameter("status", BookingStatus.CONFIRMED.name())
+      .setParameter("startDateTime", startDateTime)
+      .getSingleResult()
+      .map(total -> total != null && total > 0L));
+  }
+
   private Uni<Long> countAdminBookings(Mutiny.Session session, Collection<UUID> branchIds, BookingDateTimeFilter filter) {
-    return filter.bind(session.createQuery(
-        "select count(entity) from BookingEntity entity " +
-          "where entity.branchId in :branchIds " +
+    return filter.bind(session.createNativeQuery(
+        "select count(*) from booking.booking entity " +
+          "where entity.branch_id in (:branchIds) " +
           "and entity.status = :status " +
           filter.whereClause(),
         Long.class
       )
       .setParameter("branchIds", branchIds)
-      .setParameter("status", BookingStatus.CONFIRMED))
+      .setParameter("status", BookingStatus.CONFIRMED.name()))
       .getSingleResult()
       .map(total -> total == null ? 0L : total);
   }
 
   private Uni<Long> countCustomerBookings(Mutiny.Session session, CustomerBookingFilter filter) {
-    return filter.bind(session.createQuery(
-        "select count(entity) from BookingEntity entity " + filter.whereClause(),
+    return filter.bind(session.createNativeQuery(
+        "select count(*) from booking.booking entity " + filter.whereClause(),
         Long.class
       ))
       .getSingleResult()
       .map(total -> total == null ? 0L : total);
-  }
-
-  private Uni<Optional<Booking>> findBookingFromLookup(Mutiny.Session session, BookingLookupEntity lookupEntity) {
-    return session.find(BookingEntity.class, lookupEntity.bookingId)
-      .map(bookingEntity -> Optional.ofNullable(bookingEntity).map(persistenceMapper::toDomain));
   }
 
   private Optional<Booking> firstBooking(List<BookingEntity> entities) {
@@ -243,10 +271,10 @@ public class JpaBookingRepository implements BookingRepository {
 
   private RuntimeException translate(Throwable throwable) {
     String message = findMessage(throwable);
-    if (message.contains("uq_booking_lookup_idempotency")) {
+    if (message.contains("uq_booking_idempotency_key")) {
       return new DuplicateBookingRequestException("The idempotency key has already been processed.");
     }
-    if (message.contains("pk_booking_lookup")) {
+    if (message.contains("uq_booking_reference")) {
       return new BookingReferenceCollisionException("Booking reference collision detected.");
     }
     return throwable instanceof RuntimeException runtimeException
@@ -266,21 +294,18 @@ public class JpaBookingRepository implements BookingRepository {
     return message;
   }
 
-  private record BookingDateTimeFilter(OffsetDateTime startDateTime, OffsetDateTime endDateTime) {
-    private static BookingDateTimeFilter from(OffsetDateTime startDateTime, OffsetDateTime endDateTime) {
-      return new BookingDateTimeFilter(
-        BookingDateTimes.toUtc(startDateTime),
-        BookingDateTimes.toUtc(endDateTime)
-      );
+  private record BookingDateTimeFilter(LocalDateTime startDateTime, LocalDateTime endDateTime) {
+    private static BookingDateTimeFilter from(LocalDateTime startDateTime, LocalDateTime endDateTime) {
+      return new BookingDateTimeFilter(startDateTime, endDateTime);
     }
 
     private String whereClause() {
       StringBuilder conditions = new StringBuilder();
       if (startDateTime != null) {
-        conditions.append("and entity.startDateTime >= :startDateTime ");
+        conditions.append("and entity.start_datetime >= :startDateTime ");
       }
       if (endDateTime != null) {
-        conditions.append("and entity.startDateTime <= :endDateTime ");
+        conditions.append("and entity.start_datetime <= :endDateTime ");
       }
       return conditions.toString();
     }
@@ -298,43 +323,41 @@ public class JpaBookingRepository implements BookingRepository {
 
   private record CustomerBookingFilter(
     String customerEmail,
-    OffsetDateTime startDateTime,
-    OffsetDateTime endDateTime,
+    LocalDateTime startDateTime,
+    LocalDateTime endDateTime,
     String branchSearchPattern
   ) {
     private static CustomerBookingFilter from(
       String customerEmail,
-      OffsetDateTime startDateTime,
-      OffsetDateTime endDateTime,
+      LocalDateTime startDateTime,
+      LocalDateTime endDateTime,
       String branchSearch
     ) {
       SearchTerm branchSearchTerm = SearchTerm.from(branchSearch);
       String branchSearchPattern = branchSearchTerm.isBlank() ? null : branchSearchTerm.likePattern();
       return new CustomerBookingFilter(
         customerEmail,
-        BookingDateTimes.toUtc(startDateTime),
-        BookingDateTimes.toUtc(endDateTime),
+        startDateTime,
+        endDateTime,
         branchSearchPattern
       );
     }
 
     private String whereClause() {
       StringBuilder conditions = new StringBuilder(
-        "where lower(entity.customerEmail) = lower(:customerEmail) "
+        "where lower(entity.customer_email) = lower(:customerEmail) "
       );
       if (startDateTime != null) {
-        conditions.append("and entity.startDateTime >= :startDateTime ");
+        conditions.append("and entity.start_datetime >= :startDateTime ");
       }
       if (endDateTime != null) {
-        conditions.append("and entity.startDateTime <= :endDateTime ");
+        conditions.append("and entity.start_datetime <= :endDateTime ");
       }
       if (branchSearchPattern != null) {
         conditions.append(
           "and exists (" +
-            "  select 1 from BranchEntity branch where branch.id = entity.branchId " +
-            "  and (lower(branch.name) like :branchSearchPattern " +
-            "       or lower(branch.city) like :branchSearchPattern " +
-            "       or lower(branch.code) like :branchSearchPattern)" +
+            "  select 1 from booking.branch branch where branch.id = entity.branch_id " +
+            "  and lower(branch.code || ' ' || branch.name || ' ' || branch.city || ' ' || coalesce(branch.province, '') || ' ' || branch.country || ' ' || coalesce(branch.address, '')) like :branchSearchPattern" +
             ") "
         );
       }

@@ -25,9 +25,6 @@ export interface BookingSlot {
   branchId: string;
   startDateTime: string;
   endDateTime: string;
-  capacity: number;
-  reservedCount: number;
-  remainingCapacity: number;
 }
 
 export interface CreateBookingPayload {

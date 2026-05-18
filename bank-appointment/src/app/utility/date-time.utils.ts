@@ -8,12 +8,6 @@ export interface TimeSlotGroup {
   timeOptions: TimeSlotOption[];
 }
 
-const SYSTEM_TIME_ZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-export function getSystemTimeZone(): string {
-  return SYSTEM_TIME_ZONE;
-}
-
 export function addDays(date: Date, days: number): Date {
   const adjustedDate = new Date(date);
   adjustedDate.setDate(adjustedDate.getDate() + days);
@@ -61,20 +55,6 @@ export function toApiTime(value: string): string {
 
 export function toHourMinuteTime(value: string): string {
   return value.slice(0, 5);
-}
-
-export function toSystemUtcIsoDateTime(date: Date, timeValue: string): string {
-  const { hour, minute, second } = parseTimeValue(timeValue);
-
-  return new Date(
-    date.getFullYear(),
-    date.getMonth(),
-    date.getDate(),
-    hour,
-    minute,
-    second,
-    0
-  ).toISOString();
 }
 
 export function formatBookingDateTimeDate(value: string, locale = 'en-ZA'): string {
@@ -142,10 +122,7 @@ function formatBookingDateTime(
   locale: string,
   options: Intl.DateTimeFormatOptions
 ): string {
-  return new Intl.DateTimeFormat(locale, {
-    timeZone: getSystemTimeZone(),
-    ...options
-  }).format(new Date(value));
+  return new Intl.DateTimeFormat(locale, options).format(new Date(value));
 }
 
 function displayTime(hour: number, minute: number): string {

@@ -8,9 +8,11 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
 import java.time.OffsetDateTime;
+import lombok.extern.slf4j.Slf4j;
 import za.co.capitec.booking.api.dto.ApiError;
 
 @Provider
+@Slf4j
 public class UnhandledExceptionMapper implements ExceptionMapper<Throwable> {
   @Override
   public Response toResponse(Throwable exception) {
@@ -38,6 +40,7 @@ public class UnhandledExceptionMapper implements ExceptionMapper<Throwable> {
         .entity(new ApiError(errorCode, errorMessage, OffsetDateTime.now()))
         .build();
     }
+    log.error("Unhandled API exception", exception);
     return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
       .entity(new ApiError("internal_error", "An unexpected error occurred.", OffsetDateTime.now()))
       .build();

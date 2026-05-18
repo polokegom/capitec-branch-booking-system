@@ -2,10 +2,10 @@ package za.co.capitec.booking.application.service;
 
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import za.co.capitec.booking.application.port.BranchCatalog;
+import za.co.capitec.booking.application.port.BranchRepository;
 import za.co.capitec.booking.application.port.BookingRepository;
 import za.co.capitec.booking.domain.exception.BookingNotFoundException;
 import za.co.capitec.booking.domain.model.Booking;
@@ -16,7 +16,7 @@ import za.co.capitec.booking.domain.model.Pagination;
 @RequiredArgsConstructor
 public class BookingQueryService {
   private final BookingRepository bookingRepository;
-  private final BranchCatalog branchCatalog;
+  private final BranchRepository branchRepository;
 
   public Uni<Booking> findByReference(String bookingReference) {
     return bookingRepository.findByReference(bookingReference)
@@ -32,8 +32,8 @@ public class BookingQueryService {
 
   public Uni<Pagination<Booking>> findByCustomerEmailUsingPagination(
     String customerEmail,
-    OffsetDateTime startDateTime,
-    OffsetDateTime endDateTime,
+    LocalDateTime startDateTime,
+    LocalDateTime endDateTime,
     String branchSearch,
     int startIndex,
     int endIndex
@@ -46,8 +46,8 @@ public class BookingQueryService {
 
   public Uni<Pagination<BookingDetails>> findCustomerBookingDetailsUsingPagination(
     String customerEmail,
-    OffsetDateTime startDateTime,
-    OffsetDateTime endDateTime,
+    LocalDateTime startDateTime,
+    LocalDateTime endDateTime,
     String branchSearch,
     int startIndex,
     int endIndex
@@ -62,7 +62,7 @@ public class BookingQueryService {
     }
 
     List<Uni<BookingDetails>> detailLookups = pagination.items().stream()
-      .map(booking -> branchCatalog.findById(booking.branchId())
+      .map(booking -> branchRepository.findById(booking.branchId())
         .map(branch -> new BookingDetails(booking, branch.orElse(null))))
       .toList();
 

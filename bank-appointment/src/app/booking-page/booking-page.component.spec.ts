@@ -118,8 +118,8 @@ describe('BookingPageComponent', () => {
   it('should recover a successful booking when the submission fails after persistence', async () => {
     const payload: CreateBookingPayload = {
       branchId: 'branch-1',
-      startDateTime: '2026-05-04T08:00:00Z',
-      endDateTime: '2026-05-04T08:30:00Z',
+      startDateTime: '2026-05-04T08:00:00',
+      endDateTime: '2026-05-04T08:30:00',
       customerName: 'Repro Customer',
       customerEmail: 'repro.customer@example.com',
       preferredLanguage: 'en'
@@ -137,7 +137,7 @@ describe('BookingPageComponent', () => {
       customerEmail: payload.customerEmail,
       preferredLanguage: payload.preferredLanguage,
       status: 'CONFIRMED',
-      createdAt: '2026-05-01T18:09:30.569557451Z'
+      createdAt: '2026-05-01T18:09:30'
     };
 
     bookingApiService.createBooking.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 503 })));

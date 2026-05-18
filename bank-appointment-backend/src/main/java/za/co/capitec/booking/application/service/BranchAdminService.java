@@ -3,7 +3,6 @@ package za.co.capitec.booking.application.service;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.infrastructure.Infrastructure;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
@@ -26,24 +25,19 @@ import za.co.capitec.booking.infrastructure.persistence.mapper.PersistenceMapper
 @RequiredArgsConstructor
 public class BranchAdminService {
 
-  private static final int SLOT_MINUTES = 30;
-  private static final int DEFAULT_CAPACITY = 1;
-  private static final String ALL_BRANCHES_QUERY = "from BranchEntity branch order by branch.active desc, branch.name asc";
-  private static final String ALL_BRANCH_COUNT_QUERY = "select count(branch) from BranchEntity branch";
-  private static final String ASSIGNED_BRANCHES_QUERY =
-    "from BranchEntity branch where lower(branch.adminEmail) = lower(:email) order by branch.active desc, branch.name asc";
-  private static final String ASSIGNED_BRANCH_COUNT_QUERY =
-    "select count(branch) from BranchEntity branch where lower(branch.adminEmail) = lower(:email)";
+  private static final String ALL_BRANCHES_QUERY = "select * from booking.branch order by active desc, name asc";
+  private static final String ALL_BRANCH_COUNT_QUERY = "select count(*) from booking.branch";
+  private static final String ASSIGNED_BRANCHES_QUERY = "select * from booking.branch where lower(admin_email) = lower(:email) order by active desc, name asc";
+  private static final String ASSIGNED_BRANCH_COUNT_QUERY ="select count(*) from booking.branch where lower(admin_email) = lower(:email)";
 
   private final Mutiny.SessionFactory sessionFactory;
   private final FusionAuthAdminClient fusionAuthAdminClient;
   private final CountriesWithBankBranches countriesWithBankBranches;
   private final PersistenceMapper persistenceMapper;
-  @Inject
-  BookingNotificationService bookingNotificationService;
+  private final BookingNotificationService bookingNotificationService;
 
   public Uni<List<Branch>> listAll() {
-    return sessionFactory.withSession(session -> session.createQuery(ALL_BRANCHES_QUERY, BranchEntity.class)
+    return sessionFactory.withSession(session -> session.createNativeQuery(ALL_BRANCHES_QUERY, BranchEntity.class)
       .getResultList()
       .map(persistenceMapper::toBranches));
   }
@@ -53,7 +47,7 @@ public class BranchAdminService {
     if (assignedAdminEmail == null) {
       return Uni.createFrom().item(List.of());
     }
-    return sessionFactory.withSession(session -> session.createQuery(ASSIGNED_BRANCHES_QUERY, BranchEntity.class)
+    return sessionFactory.withSession(session -> session.createNativeQuery(ASSIGNED_BRANCHES_QUERY, BranchEntity.class)
       .setParameter("email", assignedAdminEmail)
       .getResultList()
       .map(persistenceMapper::toBranches));
@@ -62,14 +56,14 @@ public class BranchAdminService {
   public Uni<Pagination<Branch>> listAllUsingPagination(int startIndex, int endIndex) {
     PaginationWindow paginationWindow = PaginationWindow.from(startIndex, endIndex);
 
-    return sessionFactory.withSession(session -> session.createQuery(ALL_BRANCH_COUNT_QUERY, Long.class)
+    return sessionFactory.withSession(session -> session.createNativeQuery(ALL_BRANCH_COUNT_QUERY, Long.class)
       .getSingleResult()
       .chain(total -> {
         long safeTotal = total == null ? 0L : total;
         if (safeTotal == 0L || paginationWindow.isEmpty()) {
           return Uni.createFrom().item(paginationWindow.empty(safeTotal));
         }
-        return session.createQuery(ALL_BRANCHES_QUERY, BranchEntity.class)
+        return session.createNativeQuery(ALL_BRANCHES_QUERY, BranchEntity.class)
           .setFirstResult(paginationWindow.startIndex())
           .setMaxResults(paginationWindow.requestedItemCount())
           .getResultList()
@@ -85,7 +79,7 @@ public class BranchAdminService {
       return Uni.createFrom().item(paginationWindow.empty(0L));
     }
 
-    return sessionFactory.withSession(session -> session.createQuery(ASSIGNED_BRANCH_COUNT_QUERY, Long.class)
+    return sessionFactory.withSession(session -> session.createNativeQuery(ASSIGNED_BRANCH_COUNT_QUERY, Long.class)
       .setParameter("email", assignedAdminEmail)
       .getSingleResult()
       .chain(total -> {
@@ -93,7 +87,7 @@ public class BranchAdminService {
         if (safeTotal == 0L) {
           return Uni.createFrom().item(paginationWindow.empty(0L));
         }
-        return session.createQuery(ASSIGNED_BRANCHES_QUERY, BranchEntity.class)
+        return session.createNativeQuery(ASSIGNED_BRANCHES_QUERY, BranchEntity.class)
           .setParameter("email", assignedAdminEmail)
           .setFirstResult(paginationWindow.startIndex())
           .setMaxResults(paginationWindow.requestedItemCount())
@@ -115,10 +109,9 @@ public class BranchAdminService {
             return Uni.createFrom().failure(duplicateBranchCode(command.code()));
           }
 
-          BranchEntity entity = newBranchEntity(command, assignedAdminEmail);
+          BranchEntity entity = persistenceMapper.toNewEntity(command, assignedAdminEmail);
 
           return session.persist(entity)
-            .chain(() -> regenerateTemplates(session, entity.id, command.openingTime(), command.closingTime()))
             .replaceWith(persistenceMapper.toDomain(entity));
         })))
       .invoke(branch -> {
@@ -183,10 +176,9 @@ public class BranchAdminService {
 
   public Uni<Branch> reactivate(UUID branchId) {
     return sessionFactory.withTransaction((session, transaction) -> findRequiredBranch(session, branchId)
-      .chain(entity -> {
+      .map(entity -> {
         entity.active = true;
-        return regenerateTemplates(session, entity.id, entity.openingTime, entity.closingTime)
-          .replaceWith(persistenceMapper.toDomain(entity));
+        return persistenceMapper.toDomain(entity);
       }));
   }
 
@@ -203,16 +195,9 @@ public class BranchAdminService {
     }
 
     String previousAdminEmail = entity.adminEmail;
-    boolean hoursChanged = !command.openingTime().equals(entity.openingTime) || !command.closingTime().equals(entity.closingTime);
 
     return ensureAdminEmailIsRegisteredWhenChanged(assignedAdminEmail, previousAdminEmail)
-      .chain(() -> {
-        updateBranchEntity(entity, command, assignedAdminEmail);
-
-        return hoursChanged
-          ? regenerateTemplates(session, branchId, command.openingTime(), command.closingTime())
-          : Uni.createFrom().voidItem();
-      })
+      .invoke(() -> persistenceMapper.updateEntity(entity, command, assignedAdminEmail))
       .call(session::flush)
       .replaceWith(new BranchUpdateResult(
         persistenceMapper.toDomain(entity),
@@ -225,38 +210,9 @@ public class BranchAdminService {
 
   private record BranchDeactivationResult(String previousAdminEmail, String branchName, String branchDisplayLabel) {}
 
-  private BranchEntity newBranchEntity(SaveBranchCommand command, String assignedAdminEmail) {
-    return BranchEntity.builder()
-      .id(UUID.randomUUID())
-      .code(command.code().trim())
-      .name(command.name().trim())
-      .city(command.city().trim())
-      .province(trimToNull(command.province()))
-      .address(trimToNull(command.address()))
-      .country(command.country().trim())
-      .openingTime(command.openingTime())
-      .closingTime(command.closingTime())
-      .active(true)
-      .adminEmail(assignedAdminEmail)
-      .build();
-  }
-
-  private void updateBranchEntity(BranchEntity entity, SaveBranchCommand command, String assignedAdminEmail) {
-    entity.code = command.code().trim();
-    entity.name = command.name().trim();
-    entity.city = command.city().trim();
-    entity.province = trimToNull(command.province());
-    entity.address = trimToNull(command.address());
-    entity.country = command.country().trim();
-    entity.openingTime = command.openingTime();
-    entity.closingTime = command.closingTime();
-    entity.active = true;
-    entity.adminEmail = assignedAdminEmail;
-  }
-
   private Uni<BranchEntity> findByCode(Mutiny.Session session, String code) {
-    return session.createQuery(
-        "from BranchEntity branch where lower(branch.code) = lower(:code)",
+    return session.createNativeQuery(
+        "select * from booking.branch where lower(code) = lower(:code)",
         BranchEntity.class
       )
       .setParameter("code", code.trim())
@@ -294,17 +250,10 @@ public class BranchAdminService {
     if (!openingTime.isBefore(closingTime)) {
       throw new InvalidBookingRequestException("Opening time must be before closing time.");
     }
-    if (openingTime.getMinute() % SLOT_MINUTES != 0 || closingTime.getMinute() % SLOT_MINUTES != 0) {
-      throw new InvalidBookingRequestException("Operating hours must align to " + SLOT_MINUTES + "-minute boundaries.");
-    }
   }
 
   private String sanitizeAdminEmail(String adminEmail) {
     return TextSanitizer.trimToNull(adminEmail);
-  }
-
-  private String trimToNull(String value) {
-    return TextSanitizer.trimToNull(value);
   }
 
   private InvalidBookingRequestException duplicateBranchCode(String code) {
@@ -365,33 +314,4 @@ public class BranchAdminService {
       .runSubscriptionOn(Infrastructure.getDefaultWorkerPool());
   }
 
-  private Uni<Void> regenerateTemplates(Mutiny.Session session, UUID branchId, LocalTime openingTime, LocalTime closingTime) {
-    return session.createNativeQuery(
-        "delete from booking.branch_slot_template where branch_id = :branchId " +
-          "and (booking_slot_start_time < :openingTime or booking_slot_end_time > :closingTime)"
-      )
-      .setParameter("branchId", branchId)
-      .setParameter("openingTime", openingTime)
-      .setParameter("closingTime", closingTime)
-      .executeUpdate()
-      .chain(() -> insertTemplates(session, branchId, openingTime, closingTime));
-  }
-
-  private Uni<Void> insertTemplates(Mutiny.Session session, UUID branchId, LocalTime cursor, LocalTime closingTime) {
-    if (cursor.plusMinutes(SLOT_MINUTES).compareTo(closingTime) > 0) {
-      return Uni.createFrom().voidItem();
-    }
-    LocalTime end = cursor.plusMinutes(SLOT_MINUTES);
-    return session.createNativeQuery(
-        "insert into booking.branch_slot_template (branch_id, booking_slot_start_time, booking_slot_end_time, capacity) " +
-          "values (:branchId, :start, :end, :capacity) " +
-          "on conflict (branch_id, booking_slot_start_time) do nothing"
-      )
-      .setParameter("branchId", branchId)
-      .setParameter("start", cursor)
-      .setParameter("end", end)
-      .setParameter("capacity", DEFAULT_CAPACITY)
-      .executeUpdate()
-      .chain(() -> insertTemplates(session, branchId, end, closingTime));
-  }
 }

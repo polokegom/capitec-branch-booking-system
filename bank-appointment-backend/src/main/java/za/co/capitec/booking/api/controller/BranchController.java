@@ -17,9 +17,10 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import za.co.capitec.booking.api.dto.BranchMarketResponse;
 import lombok.RequiredArgsConstructor;
 import za.co.capitec.booking.api.dto.BranchAdminRequest;
 import za.co.capitec.booking.api.dto.BranchResponse;
@@ -58,8 +59,11 @@ public class BranchController {
   @GET
   @Path("/branches/countries")
   @Authenticated
-  public Uni<Map<String, List<String>>> listCountriesWithBankBranches() {
-    return Uni.createFrom().item(countriesWithBankBranches.provinces());
+  public Uni<Map<String, BranchMarketResponse>> listCountriesWithBankBranches() {
+    return Uni.createFrom().item(
+      countriesWithBankBranches.markets().entrySet().stream()
+        .collect(Collectors.toMap(Map.Entry::getKey, e -> new BranchMarketResponse(e.getValue().timezone(), e.getValue().provinces())))
+    );
   }
 
   @GET

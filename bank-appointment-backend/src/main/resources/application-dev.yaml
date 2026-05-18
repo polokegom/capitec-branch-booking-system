@@ -7,6 +7,7 @@ quarkus:
     client-id: "${OIDC_CLIENT_ID:85a03867-dccf-4882-adde-1a79aeec50df}"
     token:
       audience: "${OIDC_TOKEN_AUDIENCE:85a03867-dccf-4882-adde-1a79aeec50df}"
+      issuer: "${OIDC_TOKEN_ISSUER:http://localhost:9011}"
   datasource:
     username: "${DB_USERNAME:booking_user}"
     password: "${DB_PASSWORD:booking_pass}"

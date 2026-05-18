@@ -1,13 +1,10 @@
 package za.co.capitec.booking.api.dto;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 public record BookingSlotAvailabilityResponse(
   UUID branchId,
-  OffsetDateTime startDateTime,
-  OffsetDateTime endDateTime,
-  int capacity,
-  int reservedCount,
-  int remainingCapacity
+  LocalDateTime startDateTime,
+  LocalDateTime endDateTime
 ) {}

@@ -27,7 +27,6 @@ interface AvailableBookingSlot {
   startDateTime: string;
   endDateTime: string;
   label: string;
-  remainingCapacity: number;
 }
 
 interface BookingConfirmation {
@@ -398,8 +397,8 @@ export class BookingPageComponent implements OnInit, OnDestroy {
   private isMatchingConfirmedBooking(booking: MyBooking, payload: CreateBookingPayload): boolean {
     return booking.status === 'CONFIRMED'
       && booking.branchId === payload.branchId
-      && booking.startDateTime === payload.startDateTime
-      && booking.endDateTime === payload.endDateTime;
+      && Date.parse(booking.startDateTime) === Date.parse(payload.startDateTime)
+      && Date.parse(booking.endDateTime) === Date.parse(payload.endDateTime);
   }
 
   private setBookingSuccessConfirmation(bookingReference: string): void {
@@ -521,8 +520,7 @@ export class BookingPageComponent implements OnInit, OnDestroy {
     return {
       startDateTime: bookingSlot.startDateTime,
       endDateTime: bookingSlot.endDateTime,
-      label: this.toTimeLabel(bookingSlot.startDateTime),
-      remainingCapacity: bookingSlot.remainingCapacity
+      label: this.toTimeLabel(bookingSlot.startDateTime)
     };
   }
 

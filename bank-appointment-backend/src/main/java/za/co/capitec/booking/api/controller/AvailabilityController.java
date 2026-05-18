@@ -30,8 +30,8 @@ public class AvailabilityController {
     @QueryParam("date") @NotNull LocalDate appointmentDate
   ) {
     return availabilityQueryService.findAvailability(branchId, appointmentDate)
-      .map(result -> result.bookingSlots().stream()
-        .map(bookingSlot -> apiMapper.toBookingSlotAvailabilityResponse(bookingSlot, result.branchZone()))
+      .map(slots -> slots.stream()
+        .map(apiMapper::toBookingSlotAvailabilityResponse)
         .toList());
   }
 }

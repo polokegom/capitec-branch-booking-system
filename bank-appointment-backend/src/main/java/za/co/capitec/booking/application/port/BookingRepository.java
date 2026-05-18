@@ -1,7 +1,7 @@
 package za.co.capitec.booking.application.port;
 
 import io.smallrye.mutiny.Uni;
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
@@ -16,18 +16,18 @@ public interface BookingRepository {
 
   Uni<Optional<Booking>> findByReference(String bookingReference);
 
-  Uni<Optional<Booking>> findUpcomingByCustomerEmail(String customerEmail, OffsetDateTime currentDateTime);
+  Uni<Optional<Booking>> findUpcomingByCustomerEmail(String customerEmail, LocalDateTime currentDateTime);
 
   Uni<List<Booking>> findForAdmin(
     Collection<UUID> branchIds,
-    OffsetDateTime startDateTime,
-    OffsetDateTime endDateTime
+    LocalDateTime startDateTime,
+    LocalDateTime endDateTime
   );
 
   default Uni<Pagination<Booking>> findForAdminUsingPagination(
     Collection<UUID> branchIds,
-    OffsetDateTime startDateTime,
-    OffsetDateTime endDateTime,
+    LocalDateTime startDateTime,
+    LocalDateTime endDateTime,
     int startIndex,
     int endIndex
   ) {
@@ -39,8 +39,8 @@ public interface BookingRepository {
 
   default Uni<Pagination<Booking>> findByCustomerEmailUsingPagination(
     String customerEmail,
-    OffsetDateTime startDateTime,
-    OffsetDateTime endDateTime,
+    LocalDateTime startDateTime,
+    LocalDateTime endDateTime,
     String branchSearch,
     int startIndex,
     int endIndex
@@ -66,4 +66,12 @@ public interface BookingRepository {
   Uni<Booking> save(Booking booking);
 
   Uni<Booking> update(Booking booking);
+
+  Uni<List<LocalDateTime>> findConfirmedStartDateTimes(
+    UUID branchId,
+    LocalDateTime startInclusive,
+    LocalDateTime endExclusive
+  );
+
+  Uni<Boolean> existsConfirmedBookingAt(UUID branchId, LocalDateTime startDateTime);
 }

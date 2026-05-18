@@ -7,7 +7,7 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.reactive.mutiny.Mutiny;
-import za.co.capitec.booking.application.port.BranchCatalog;
+import za.co.capitec.booking.application.port.BranchRepository;
 import za.co.capitec.booking.domain.model.Branch;
 import za.co.capitec.booking.domain.model.Pagination;
 import za.co.capitec.booking.domain.model.PaginationWindow;
@@ -17,7 +17,7 @@ import za.co.capitec.booking.infrastructure.persistence.utility.SearchTerm;
 
 @ApplicationScoped
 @RequiredArgsConstructor
-public class JpaBranchCatalog implements BranchCatalog {
+public class JpaBranchRepository implements BranchRepository {
   private final Mutiny.SessionFactory sessionFactory;
   private final PersistenceMapper persistenceMapper;
 
@@ -45,26 +45,26 @@ public class JpaBranchCatalog implements BranchCatalog {
   private Uni<Long> countActive(SearchTerm searchTerm) {
     return sessionFactory.withSession(session -> {
       if (searchTerm.isBlank()) {
-        return session.createQuery(
-            "select count(branch) from BranchEntity branch where branch.active = true",
+        return session.createNativeQuery(
+            "select count(*) from booking.branch where active = true",
             Long.class
           )
           .getSingleResult()
           .map(total -> total == null ? 0L : total);
       }
 
-      return session.createQuery(
+      return session.createNativeQuery(
           """
-          select count(branch)
-          from BranchEntity branch
-          where branch.active = true
+          select count(*)
+          from booking.branch
+          where active = true
             and (
-              lower(branch.code) like :likeQuery
-              or lower(branch.name) like :likeQuery
-              or lower(branch.city) like :likeQuery
-              or lower(coalesce(branch.province, '')) like :likeQuery
-              or lower(coalesce(branch.country, '')) like :likeQuery
-              or lower(coalesce(branch.address, '')) like :likeQuery
+              lower(code) like :likeQuery
+              or lower(name) like :likeQuery
+              or lower(city) like :likeQuery
+              or lower(coalesce(province, '')) like :likeQuery
+              or lower(coalesce(country, '')) like :likeQuery
+              or lower(coalesce(address, '')) like :likeQuery
             )
           """,
           Long.class
@@ -78,8 +78,8 @@ public class JpaBranchCatalog implements BranchCatalog {
   private Uni<List<Branch>> executeSearch(SearchTerm searchTerm, int offset, int limit) {
     return sessionFactory.withSession(session -> {
       if (searchTerm.isBlank()) {
-        return session.createQuery(
-            "from BranchEntity branch where branch.active = true order by branch.name",
+        return session.createNativeQuery(
+            "select * from booking.branch where active = true order by name",
             BranchEntity.class
           )
           .setFirstResult(offset)
@@ -88,19 +88,20 @@ public class JpaBranchCatalog implements BranchCatalog {
           .map(persistenceMapper::toBranches);
       }
 
-      return session.createQuery(
+      return session.createNativeQuery(
           """
-          from BranchEntity branch
-          where branch.active = true
+          select *
+          from booking.branch
+          where active = true
             and (
-              lower(branch.code) like :likeQuery
-              or lower(branch.name) like :likeQuery
-              or lower(branch.city) like :likeQuery
-              or lower(coalesce(branch.province, '')) like :likeQuery
-              or lower(coalesce(branch.country, '')) like :likeQuery
-              or lower(coalesce(branch.address, '')) like :likeQuery
+              lower(code) like :likeQuery
+              or lower(name) like :likeQuery
+              or lower(city) like :likeQuery
+              or lower(coalesce(province, '')) like :likeQuery
+              or lower(coalesce(country, '')) like :likeQuery
+              or lower(coalesce(address, '')) like :likeQuery
             )
-          order by branch.name asc
+          order by name asc
           """,
           BranchEntity.class
         )

@@ -1,8 +1,8 @@
 package za.co.capitec.booking.api.utility;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.OffsetDateTime;
 import za.co.capitec.booking.application.utility.BookingDateTimes;
 import za.co.capitec.booking.domain.exception.InvalidBookingRequestException;
 
@@ -25,8 +25,8 @@ public final class RequestParameters {
       throw new InvalidBookingRequestException("endDate must be on or after startDate.");
     }
     return new DateTimeRange(
-      BookingDateTimes.toUtc(parsedStartDate, LocalTime.MIN),
-      BookingDateTimes.toUtc(parsedEndDate, LocalTime.of(23, 59))
+      BookingDateTimes.toDateTime(parsedStartDate, LocalTime.MIN),
+      BookingDateTimes.toDateTime(parsedEndDate, LocalTime.of(23, 59))
     );
   }
 
@@ -34,7 +34,7 @@ public final class RequestParameters {
     return value != null && !value.isBlank();
   }
 
-  public record DateTimeRange(OffsetDateTime startDateTime, OffsetDateTime endDateTime) {
+  public record DateTimeRange(LocalDateTime startDateTime, LocalDateTime endDateTime) {
     public static DateTimeRange empty() {
       return new DateTimeRange(null, null);
     }

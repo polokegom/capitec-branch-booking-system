@@ -3,42 +3,38 @@ package za.co.capitec.booking.application.service;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import za.co.capitec.booking.application.BookingPolicy;
 import za.co.capitec.booking.application.BookingReferenceGenerator;
 import za.co.capitec.booking.application.command.CreateBookingCommand;
-import za.co.capitec.booking.application.configuration.CountriesWithBankBranches;
 import za.co.capitec.booking.application.port.BookingRepository;
-import za.co.capitec.booking.application.port.BranchCatalog;
-import za.co.capitec.booking.application.port.BookingSlotInventoryRepository;
+import za.co.capitec.booking.application.port.BranchRepository;
 import za.co.capitec.booking.application.utility.BookingDateTimes;
 import za.co.capitec.booking.domain.exception.BookingNotFoundException;
 import za.co.capitec.booking.domain.exception.BookingReferenceCollisionException;
+import za.co.capitec.booking.domain.exception.BookingSlotUnavailableException;
 import za.co.capitec.booking.domain.exception.BranchNotFoundException;
 import za.co.capitec.booking.domain.exception.CustomerHasActiveBookingException;
 import za.co.capitec.booking.domain.exception.DuplicateBookingRequestException;
 import za.co.capitec.booking.domain.exception.InvalidBookingRequestException;
-import za.co.capitec.booking.domain.exception.BookingSlotUnavailableException;
 import za.co.capitec.booking.domain.model.Booking;
+import za.co.capitec.booking.domain.model.BookingSlotAvailability;
 import za.co.capitec.booking.domain.model.BookingStatus;
 import za.co.capitec.booking.domain.model.Branch;
-import za.co.capitec.booking.domain.model.BookingSlotAvailability;
 
 @ApplicationScoped
 @RequiredArgsConstructor
 public class BookingCommandService {
   private final BookingRepository bookingRepository;
-  private final BranchCatalog branchCatalog;
-  private final BookingSlotInventoryRepository bookingSlotInventoryRepository;
+  private final BranchRepository branchRepository;
   private final BookingPolicy bookingPolicy;
   private final BookingReferenceGenerator bookingReferenceGenerator;
   private final BookingNotificationService bookingNotificationService;
-  private final CountriesWithBankBranches countriesWithBankBranches;
 
   public Uni<Booking> createBooking(CreateBookingCommand command) {
     return bookingRepository.findByIdempotencyKey(command.idempotencyKey())
@@ -53,42 +49,40 @@ public class BookingCommandService {
       .invoke(booking -> validateCancellation(booking, bookingReference, callerEmail))
       .map(this::cancelledCopy)
       .chain(bookingRepository::update)
-      .chain(persisted -> branchCatalog.findById(persisted.branchId())
-        .map(branch -> cancelledBooking(persisted, branch.orElse(null))))
-      .call(cancelledBooking -> bookingSlotInventoryRepository.releaseBookingSlot(
-          cancelledBooking.booking().branchId(),
-          BookingDateTimes.toBookingDate(cancelledBooking.booking().startDateTime(), cancelledBooking.branchZone()),
-          BookingDateTimes.toBookingTime(cancelledBooking.booking().startDateTime(), cancelledBooking.branchZone())
-        )
-        .replaceWithVoid())
+      .chain(persisted -> branchRepository.findById(persisted.branchId())
+        .map(branch -> new CancelledBooking(persisted, branch.orElse(null))))
       .invoke(cancelledBooking -> bookingNotificationService.sendCancellationEmail(cancelledBooking.booking(), cancelledBooking.branch()))
       .map(CancelledBooking::booking);
   }
 
   private Uni<Booking> createNewBooking(CreateBookingCommand command) {
-    return ensureCustomerHasNoActiveBooking(command)
-      .chain(() -> branchCatalog.findById(command.branchId()))
+    return branchRepository.findById(command.branchId())
       .map(branch -> branch.orElseThrow(() -> new BranchNotFoundException(command.branchId())))
-      .chain(branch -> {
-        ZoneId branchZone = branchZone(branch);
-        LocalDate appointmentDate = BookingDateTimes.toBookingDate(command.startDateTime(), branchZone);
-        LocalTime bookingSlotStartTime = BookingDateTimes.toBookingTime(command.startDateTime(), branchZone);
-        bookingPolicy.validateBookingDate(appointmentDate, branchZone);
-        bookingPolicy.validateBookingSlot(appointmentDate, bookingSlotStartTime, branchZone);
-        return bookingSlotInventoryRepository.ensureInventory(command.branchId(), appointmentDate)
-          .chain(() -> bookingSlotInventoryRepository.findBookingSlot(command.branchId(), appointmentDate, bookingSlotStartTime))
-          .map(bookingSlot -> bookingSlot.orElseThrow(() -> new BookingSlotUnavailableException("The requested booking slot does not exist for the selected branch and date.")))
-          .chain(bookingSlotAvailability -> reserveBookingSlotAndPersist(command, bookingSlotAvailability, branch, branchZone));
-      });
+      .chain(branch -> ensureCustomerHasNoActiveBooking(command, branch)
+        .chain(() -> {
+          LocalDate appointmentDate = BookingDateTimes.toBookingDate(command.startDateTime());
+          LocalTime bookingSlotStartTime = BookingDateTimes.toBookingTime(command.startDateTime());
+          bookingPolicy.validateBookingDate(appointmentDate);
+          bookingPolicy.validateBookingSlot(appointmentDate, bookingSlotStartTime, branch.country());
+          BookingSlotAvailability requestedSlot = branch.bookingSlots(appointmentDate).stream()
+            .filter(slot -> slot.bookingSlotStartTime().equals(bookingSlotStartTime))
+            .findFirst()
+            .orElseThrow(() -> new BookingSlotUnavailableException("The requested booking slot does not exist for the selected branch and date."));
+          validateRequestedDateTimes(command, requestedSlot);
+          return bookingRepository.existsConfirmedBookingAt(command.branchId(), command.startDateTime())
+            .chain(taken -> taken
+              ? Uni.createFrom().failure(new BookingSlotUnavailableException("The requested booking slot is no longer available."))
+              : saveWithReferenceRetry(command, branch, 0));
+        }));
   }
 
-  private Uni<Void> ensureCustomerHasNoActiveBooking(CreateBookingCommand command) {
+  private Uni<Void> ensureCustomerHasNoActiveBooking(CreateBookingCommand command, Branch branch) {
     if (command.customerEmail() == null || command.customerEmail().isBlank()) {
       return Uni.createFrom().voidItem();
     }
     return bookingRepository.findUpcomingByCustomerEmail(
         command.customerEmail(),
-        bookingPolicy.currentDateTime()
+        bookingPolicy.currentDateTime(branch.country())
       )
       .invoke(activeBooking -> activeBooking.ifPresent(active -> {
         throw new CustomerHasActiveBookingException(
@@ -104,31 +98,14 @@ public class BookingCommandService {
       .replaceWithVoid();
   }
 
-  private Uni<Booking> reserveBookingSlotAndPersist(
-    CreateBookingCommand command,
-    BookingSlotAvailability bookingSlotAvailability,
-    Branch branch,
-    ZoneId branchZone
-  ) {
-    validateRequestedDateTimes(command, bookingSlotAvailability, branchZone);
-    return bookingSlotInventoryRepository.reserveBookingSlot(command.branchId(), bookingSlotAvailability.appointmentDate(), bookingSlotAvailability.bookingSlotStartTime())
-      .chain(reserved -> {
-        if (!reserved) {
-          return bookingRepository.findByIdempotencyKey(command.idempotencyKey())
-            .map(existing -> existing.orElseThrow(() -> new BookingSlotUnavailableException("The requested booking slot is no longer available.")));
-        }
-        return saveWithReferenceRetry(command, branch, 0);
-      });
-  }
-
   private Uni<Booking> saveWithReferenceRetry(CreateBookingCommand command, Branch branch, int attempt) {
     Booking booking = Booking.builder()
       .id(UUID.randomUUID())
       .bookingReference(bookingReferenceGenerator.nextReference())
       .idempotencyKey(command.idempotencyKey())
       .branchId(command.branchId())
-      .startDateTime(BookingDateTimes.toUtc(command.startDateTime()))
-      .endDateTime(BookingDateTimes.toUtc(command.endDateTime()))
+      .startDateTime(command.startDateTime())
+      .endDateTime(command.endDateTime())
       .customerName(command.customerName())
       .customerEmail(command.customerEmail())
       .preferredLanguage(command.preferredLanguage())
@@ -155,8 +132,8 @@ public class BookingCommandService {
       throw new InvalidBookingRequestException("This booking is not active and cannot be cancelled.");
     }
 
-    OffsetDateTime appointmentStart = BookingDateTimes.toUtc(booking.startDateTime());
-    if (!appointmentStart.isAfter(OffsetDateTime.now(ZoneOffset.UTC))) {
+    LocalDateTime appointmentStart = booking.startDateTime();
+    if (!appointmentStart.isAfter(LocalDateTime.now(ZoneOffset.UTC))) {
       throw new InvalidBookingRequestException("This appointment has already started or passed and cannot be cancelled.");
     }
   }
@@ -165,32 +142,22 @@ public class BookingCommandService {
     return booking.toBuilder().status(BookingStatus.CANCELLED).build();
   }
 
-  private void validateRequestedDateTimes(CreateBookingCommand command, BookingSlotAvailability bookingSlotAvailability, ZoneId branchZone) {
-    OffsetDateTime expectedStart = BookingDateTimes.toUtc(
-      bookingSlotAvailability.appointmentDate(),
-      bookingSlotAvailability.bookingSlotStartTime(),
-      branchZone
+  private void validateRequestedDateTimes(CreateBookingCommand command, BookingSlotAvailability requestedSlot) {
+    LocalDateTime expectedStart = BookingDateTimes.toDateTime(
+      requestedSlot.appointmentDate(),
+      requestedSlot.bookingSlotStartTime()
     );
-    OffsetDateTime expectedEnd = BookingDateTimes.toUtc(
-      bookingSlotAvailability.appointmentDate(),
-      bookingSlotAvailability.bookingSlotEndTime(),
-      branchZone
+    LocalDateTime expectedEnd = BookingDateTimes.toDateTime(
+      requestedSlot.appointmentDate(),
+      requestedSlot.bookingSlotStartTime().plusMinutes(Branch.SLOT_MINUTES)
     );
 
-    if (!BookingDateTimes.sameInstant(command.startDateTime(), expectedStart)
-      || !BookingDateTimes.sameInstant(command.endDateTime(), expectedEnd)) {
+    if (!BookingDateTimes.sameDateTime(command.startDateTime(), expectedStart)
+      || !BookingDateTimes.sameDateTime(command.endDateTime(), expectedEnd)) {
       throw new InvalidBookingRequestException("Requested start and end date times do not match the selected slot.");
     }
   }
 
-  private ZoneId branchZone(Branch branch) {
-    return branch == null ? BookingDateTimes.UTC_ZONE : countriesWithBankBranches.zoneIdFor(branch.country());
-  }
-
-  private CancelledBooking cancelledBooking(Booking booking, Branch branch) {
-    return new CancelledBooking(booking, branch, branchZone(branch));
-  }
-
-  private record CancelledBooking(Booking booking, Branch branch, ZoneId branchZone) {
+  private record CancelledBooking(Booking booking, Branch branch) {
   }
 }

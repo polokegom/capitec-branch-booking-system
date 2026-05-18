@@ -1,10 +1,9 @@
 package za.co.capitec.booking.api.mapper;
 
-import java.time.ZoneId;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
-import za.co.capitec.booking.api.dto.AdminBookingResponse;
+import za.co.capitec.booking.api.dto.BookingDetailResponse;
 import za.co.capitec.booking.api.dto.BookingResponse;
 import za.co.capitec.booking.api.dto.BranchResponse;
 import za.co.capitec.booking.api.dto.BranchAdminRequest;
@@ -25,26 +24,21 @@ public interface ApiMapper {
 
   SaveBranchCommand toSaveBranchCommand(BranchAdminRequest request);
 
-  default BookingSlotAvailabilityResponse toBookingSlotAvailabilityResponse(
-    BookingSlotAvailability bookingSlotAvailability,
-    ZoneId branchZone
-  ) {
+  default BookingSlotAvailabilityResponse toBookingSlotAvailabilityResponse(BookingSlotAvailability bookingSlotAvailability) {
     if (bookingSlotAvailability == null) {
       return null;
     }
     return new BookingSlotAvailabilityResponse(
       bookingSlotAvailability.branchId(),
-      BookingDateTimes.toUtc(bookingSlotAvailability.appointmentDate(), bookingSlotAvailability.bookingSlotStartTime(), branchZone),
-      BookingDateTimes.toUtc(bookingSlotAvailability.appointmentDate(), bookingSlotAvailability.bookingSlotEndTime(), branchZone),
-      bookingSlotAvailability.capacity(),
-      bookingSlotAvailability.reservedCount(),
-      bookingSlotAvailability.remainingCapacity()
+      BookingDateTimes.toDateTime(bookingSlotAvailability.appointmentDate(), bookingSlotAvailability.bookingSlotStartTime()),
+      BookingDateTimes.toDateTime(
+        bookingSlotAvailability.appointmentDate(),
+        bookingSlotAvailability.bookingSlotStartTime().plusMinutes(Branch.SLOT_MINUTES)
+      )
     );
   }
 
   @Mapping(target = "bookingId", source = "id")
-  @Mapping(target = "startDateTime", expression = "java(toUtc(booking.startDateTime()))")
-  @Mapping(target = "endDateTime", expression = "java(toUtc(booking.endDateTime()))")
   @Mapping(target = "status", expression = "java(booking.status() == null ? null : booking.status().name())")
   BookingResponse toBookingResponse(Booking booking);
 
@@ -54,14 +48,12 @@ public interface ApiMapper {
   @Mapping(target = "branchName", expression = "java(branch == null ? null : branch.name())")
   @Mapping(target = "branchCity", expression = "java(branch == null ? null : branch.city())")
   @Mapping(target = "branchCountry", expression = "java(branch == null ? null : branch.country())")
-  @Mapping(target = "startDateTime", expression = "java(toUtc(booking.startDateTime()))")
-  @Mapping(target = "endDateTime", expression = "java(toUtc(booking.endDateTime()))")
   @Mapping(target = "customerName", source = "booking.customerName")
   @Mapping(target = "customerEmail", source = "booking.customerEmail")
   @Mapping(target = "preferredLanguage", source = "booking.preferredLanguage")
   @Mapping(target = "status", expression = "java(booking.status() == null ? null : booking.status().name())")
   @Mapping(target = "createdAt", source = "booking.createdAt")
-  AdminBookingResponse toAdminBookingResponse(Booking booking, Branch branch);
+  BookingDetailResponse toBookingDetailResponse(Booking booking, Branch branch);
 
   @Mapping(target = "id", source = "booking.id")
   @Mapping(target = "bookingReference", source = "booking.bookingReference")
@@ -69,19 +61,15 @@ public interface ApiMapper {
   @Mapping(target = "branchName", expression = "java(details.branch() == null ? null : details.branch().name())")
   @Mapping(target = "branchCity", expression = "java(details.branch() == null ? null : details.branch().city())")
   @Mapping(target = "branchCountry", expression = "java(details.branch() == null ? null : details.branch().country())")
-  @Mapping(target = "startDateTime", expression = "java(toUtc(details.booking().startDateTime()))")
-  @Mapping(target = "endDateTime", expression = "java(toUtc(details.booking().endDateTime()))")
+  @Mapping(target = "startDateTime", source = "booking.startDateTime")
+  @Mapping(target = "endDateTime", source = "booking.endDateTime")
   @Mapping(target = "customerName", source = "booking.customerName")
   @Mapping(target = "customerEmail", source = "booking.customerEmail")
   @Mapping(target = "preferredLanguage", source = "booking.preferredLanguage")
   @Mapping(target = "status", expression = "java(details.booking().status() == null ? null : details.booking().status().name())")
   @Mapping(target = "createdAt", source = "booking.createdAt")
-  AdminBookingResponse toAdminBookingResponse(BookingDetails details);
+  BookingDetailResponse toBookingDetailResponse(BookingDetails details);
 
   @Mapping(target = "idempotencyKey", source = "idempotencyKey")
   CreateBookingCommand toCreateBookingCommand(CreateBookingRequest request, String idempotencyKey);
-
-  default java.time.OffsetDateTime toUtc(java.time.OffsetDateTime value) {
-    return BookingDateTimes.toUtc(value);
-  }
 }

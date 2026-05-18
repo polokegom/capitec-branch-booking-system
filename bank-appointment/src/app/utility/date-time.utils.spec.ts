@@ -3,13 +3,11 @@ import {
   buildHalfHourTimeSlots,
   formatBookingDateTimeTime,
   fromIsoDate,
-  getSystemTimeZone,
   isDateRangeFilterValid,
   roundDownToHalfHour,
   toApiTime,
   toHourMinuteTime,
-  toIsoDate,
-  toSystemUtcIsoDateTime
+  toIsoDate
 } from './date-time.utils';
 
 describe('date-time utilities', () => {
@@ -39,20 +37,9 @@ describe('date-time utilities', () => {
     expect(isDateRangeFilterValid('2026-05-02', '2026-05-01')).toBe(false);
   });
 
-  it('converts a captured system date and time to a UTC ISO datetime', () => {
-    const date = new Date(2026, 3, 21);
-
-    expect(toSystemUtcIsoDateTime(date, '09:30:00')).toBe(new Date(2026, 3, 21, 9, 30).toISOString());
-  });
-
-  it('reads the browser system timezone', () => {
-    expect(getSystemTimeZone()).toBe(Intl.DateTimeFormat().resolvedOptions().timeZone);
-  });
-
-  it('formats UTC booking instants in the system timezone', () => {
-    const value = '2026-04-21T07:00:00Z';
+  it('formats local booking datetimes without shifting the selected time', () => {
+    const value = '2026-04-21T07:00:00';
     const expectedTime = new Intl.DateTimeFormat('en-ZA', {
-      timeZone: getSystemTimeZone(),
       hour: '2-digit',
       minute: '2-digit',
       hour12: false

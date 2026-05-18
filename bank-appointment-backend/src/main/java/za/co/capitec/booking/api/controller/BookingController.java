@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.eclipse.microprofile.jwt.JsonWebToken;
-import za.co.capitec.booking.api.dto.AdminBookingResponse;
+import za.co.capitec.booking.api.dto.BookingDetailResponse;
 import za.co.capitec.booking.api.dto.BookingResponse;
 import za.co.capitec.booking.api.dto.BranchResponse;
 import za.co.capitec.booking.api.dto.CreateBookingRequest;
@@ -76,17 +76,9 @@ public class BookingController {
   }
 
   @GET
-  @Path("/bookings/{bookingReference}")
-  @Authenticated
-  public Uni<BookingResponse> findBooking(@PathParam("bookingReference") @NotBlank String bookingReference) {
-    return bookingQueryService.findByReference(bookingReference)
-      .map(apiMapper::toBookingResponse);
-  }
-
-  @GET
   @Path("/customer/bookings")
   @RolesAllowed(SecurityRoles.CUSTOMER)
-  public Uni<PaginationResponse<AdminBookingResponse>> listCustomerBookings(
+  public Uni<PaginationResponse<BookingDetailResponse>> listCustomerBookings(
     @QueryParam("startDate") String startDate,
     @QueryParam("endDate") String endDate,
     @QueryParam("branchSearch") String branchSearch,
@@ -110,7 +102,7 @@ public class BookingController {
             range.startIndex(),
             range.endIndex()
           )
-          .map(pagination -> PaginationResponse.mapped(pagination, apiMapper::toAdminBookingResponse));
+          .map(pagination -> PaginationResponse.mapped(pagination, apiMapper::toBookingDetailResponse));
       });
   }
 
@@ -130,8 +122,8 @@ public class BookingController {
 
   @GET
   @Path("/admin/bookings/branches")
-  @RolesAllowed({SecurityRoles.OWNER, SecurityRoles.ADMIN})
-  public Uni<PaginationResponse<BranchResponse>> listVisibleAdminBranches(
+  @RolesAllowed(SecurityRoles.OWNER)
+  public Uni<PaginationResponse<BranchResponse>> listVisibleBranchesForOwner(
     @QueryParam("startIndex") Integer startIndex,
     @QueryParam("endIndex") Integer endIndex
   ) {
@@ -155,8 +147,8 @@ public class BookingController {
 
   @GET
   @Path("/admin/bookings")
-  @RolesAllowed({SecurityRoles.OWNER, SecurityRoles.ADMIN})
-  public Uni<PaginationResponse<AdminBookingResponse>> listAdminBookings(
+  @RolesAllowed(SecurityRoles.ADMIN)
+  public Uni<PaginationResponse<BookingDetailResponse>> listOfBookingsForAdmin(
     @QueryParam("startDate") String startDate,
     @QueryParam("endDate") String endDate,
     @QueryParam("branchSearch") String branchSearch,
@@ -211,7 +203,7 @@ public class BookingController {
     return branchesById;
   }
 
-  private Uni<PaginationResponse<AdminBookingResponse>> listAdminBookingsForBranches(
+  private Uni<PaginationResponse<BookingDetailResponse>> listAdminBookingsForBranches(
     Map<UUID, Branch> branchesById,
     DateTimeRange dateRange,
     PaginationRange range
@@ -225,7 +217,7 @@ public class BookingController {
       )
       .map(pagination -> PaginationResponse.mapped(
         pagination,
-        booking -> apiMapper.toAdminBookingResponse(booking, branchesById.get(booking.branchId()))
+        booking -> apiMapper.toBookingDetailResponse(booking, branchesById.get(booking.branchId()))
       ));
   }
 

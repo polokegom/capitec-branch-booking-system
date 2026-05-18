@@ -19,8 +19,14 @@ quarkus:
           methods: "GET,POST,OPTIONS"
   oidc:
     application-type: "service"
+    discovery-enabled: false
+    introspection-path: /oauth2/introspect
     roles:
       role-claim-path: "roles"
+    token:
+      cache:
+        max-size: 500
+        time-to-live: PT1M
   datasource:
     db-kind: "postgresql"
   hibernate-orm:

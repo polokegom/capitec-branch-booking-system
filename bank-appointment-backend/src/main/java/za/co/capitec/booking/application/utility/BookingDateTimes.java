@@ -1,11 +1,10 @@
 package za.co.capitec.booking.application.utility;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
 
 public final class BookingDateTimes {
   public static final ZoneId UTC_ZONE = ZoneOffset.UTC;
@@ -13,46 +12,25 @@ public final class BookingDateTimes {
   private BookingDateTimes() {
   }
 
-  public static OffsetDateTime toUtc(LocalDate appointmentDate, LocalTime bookingSlotTime) {
-    return toUtc(appointmentDate, bookingSlotTime, UTC_ZONE);
-  }
-
-  public static OffsetDateTime toUtc(LocalDate appointmentDate, LocalTime bookingSlotTime, ZoneId sourceZone) {
+  public static LocalDateTime toDateTime(LocalDate appointmentDate, LocalTime bookingSlotTime) {
     if (appointmentDate == null || bookingSlotTime == null) {
       return null;
     }
-    ZoneId effectiveSourceZone = sourceZone == null ? UTC_ZONE : sourceZone;
-    return ZonedDateTime.of(appointmentDate, bookingSlotTime, effectiveSourceZone)
-      .withZoneSameInstant(ZoneOffset.UTC)
-      .toOffsetDateTime();
+    return LocalDateTime.of(appointmentDate, bookingSlotTime);
   }
 
-  public static OffsetDateTime toUtc(OffsetDateTime value) {
-    return value == null ? null : value.withOffsetSameInstant(ZoneOffset.UTC);
+  public static LocalDate toBookingDate(LocalDateTime value) {
+    return value == null ? null : value.toLocalDate();
   }
 
-  public static LocalDate toBookingDate(OffsetDateTime value) {
-    return toBookingDate(value, UTC_ZONE);
+  public static LocalTime toBookingTime(LocalDateTime value) {
+    return value == null ? null : value.toLocalTime();
   }
 
-  public static LocalDate toBookingDate(OffsetDateTime value, ZoneId targetZone) {
-    ZoneId effectiveTargetZone = targetZone == null ? UTC_ZONE : targetZone;
-    return value == null ? null : value.atZoneSameInstant(effectiveTargetZone).toLocalDate();
-  }
-
-  public static LocalTime toBookingTime(OffsetDateTime value) {
-    return toBookingTime(value, UTC_ZONE);
-  }
-
-  public static LocalTime toBookingTime(OffsetDateTime value, ZoneId targetZone) {
-    ZoneId effectiveTargetZone = targetZone == null ? UTC_ZONE : targetZone;
-    return value == null ? null : value.atZoneSameInstant(effectiveTargetZone).toLocalTime();
-  }
-
-  public static boolean sameInstant(OffsetDateTime first, OffsetDateTime second) {
+  public static boolean sameDateTime(LocalDateTime first, LocalDateTime second) {
     if (first == null || second == null) {
       return first == second;
     }
-    return first.toInstant().equals(second.toInstant());
+    return first.equals(second);
   }
 }
