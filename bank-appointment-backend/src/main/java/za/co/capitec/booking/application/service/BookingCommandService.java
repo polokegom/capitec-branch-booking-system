@@ -36,7 +36,7 @@ public class BookingCommandService {
   private final BookingReferenceGenerator bookingReferenceGenerator;
   private final BookingNotificationService bookingNotificationService;
 
-  public Uni<Booking> createBooking(Create\BookingCommand command) {
+  public Uni<Booking> createBooking(CreateBookingCommand command) {
     return bookingRepository.findByIdempotencyKey(command.idempotencyKey())
       .chain(existingBooking -> existingBooking
         .map(Uni.createFrom()::item)
